@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { api, usingMocks } from './api';
 import { DEMO_MEETING_ID } from './api/fixtures';
+import { TranscriptPanel } from './transcript/TranscriptPanel';
 import type { Grove } from './types';
 
 // Development entry point; each owner builds their feature in its own folder.
@@ -8,16 +9,19 @@ export function App() {
   const [grove, setGrove] = useState<Grove | null>(null);
   const [error, setError] = useState('');
 
+  const [revision, setRevision] = useState(0);
+  const reloadGrove = useCallback(() => setRevision((value) => value + 1), []);
+
   useEffect(() => {
     let active = true;
     api.getGrove(DEMO_MEETING_ID).then(
-      (value) => { if (active) setGrove(value); },
+      (value) => { if (active) { setGrove(value); setError(''); } },
       (reason: unknown) => {
         if (active) setError(reason instanceof Error ? reason.message : 'Unable to load grove');
       },
     );
     return () => { active = false; };
-  }, []);
+  }, [revision]);
 
   return (
     <main>
@@ -34,6 +38,7 @@ export function App() {
           )}
         </section>
       )}
+      <TranscriptPanel api={api} meetingId={DEMO_MEETING_ID} onSeedsExtracted={reloadGrove} />
     </main>
   );
 }

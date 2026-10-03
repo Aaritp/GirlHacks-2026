@@ -59,10 +59,12 @@ its `/api` proxy forwards requests to the local backend. Test `GET /api/health`.
 The local backend starts with an empty grove; `POST /api/seeds` populates it.
 
 `GROVEKEEPER_STORAGE_MODE=memory` explicitly enables development-only storage.
-Data is lost on restart and is not shared across workers. Without that setting,
-storage routes return 503 until Cosmos is implemented. AI, Speech, and OCR endpoints
-validate their request bodies where applicable and return 501 until their owners
-connect the real services. Browser extraction mocks turn each utterance into a seed;
+Data is lost on restart and is not shared across workers. Set it to `cosmos` (with
+`AZURE_COSMOS_ENDPOINT` and `AZURE_COSMOS_KEY`) for Azure Cosmos DB; see
+[docs/storage.md](docs/storage.md). Unconfigured storage returns 503, never mock data.
+Speech tokens and extraction need their `AZURE_SPEECH_*` / `AZURE_OPENAI_*` settings and
+return 503 `SERVICE_NOT_CONFIGURED` without them; whiteboard and Leaves AI endpoints
+return 501 until their owners connect the real services. Browser extraction mocks turn each utterance into a seed;
 they are **not AI extraction**. Mock composition joins picked words and never speaks.
 
 ## Ownership and branches

@@ -4,12 +4,12 @@ import azure.functions as func
 import pytest
 from pydantic import ValidationError
 
-from function_app import app
+from conftest import indexed_functions
 from shared.models import ExtractRequest, Seed, SeedPatch
 from shared.store import MemoryStore, store
 
 # Index once, as the Functions host does. SDK indexing tracks registered names.
-FUNCTIONS = app.get_functions()
+FUNCTIONS = indexed_functions()
 
 
 @pytest.fixture
@@ -107,8 +107,9 @@ def test_invalid_json_is_a_contract_error(handlers):
     assert response.status_code == 400
 
 
-def test_service_stubs_do_not_claim_success(handlers):
-    assert handlers["speech_token"](request()).status_code == 501
+def test_service_stubs_do_not_claim_success(handlers, monkeypatch):
+    monkeypatch.delenv("AZURE_SPEECH_KEY", raising=False)
+    assert handlers["speech_token"](request()).status_code == 503
     response = handlers["compose"](request({"meetingId": "a", "picked": ["hello"]}))
     assert response.status_code == 501
     assert payload(response)["error"]["code"] == "NOT_IMPLEMENTED"
