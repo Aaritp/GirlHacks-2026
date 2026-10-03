@@ -14,7 +14,11 @@ export function attachMouseInput(target: HTMLElement, bus: InputBus = inputBus):
     if (event.pointerType === 'mouse') bus.emit({ type: 'point', ...coordinates(event) });
   };
   const select = (event: MouseEvent) => {
-    if (event.button === 0) bus.emit({ type: 'select', ...coordinates(event) });
+    // Native controls own their click/keyboard activation. Bubbling must not also
+    // select/commit through the forest surface (including the input toolbar).
+    const node = event.target as Element | null;
+    if (node?.closest?.('button, a, input, select, textarea, [role="button"], [contenteditable], [data-grove-native]')) return;
+    if (event.button === 0 && event.detail !== 0) bus.emit({ type: 'select', ...coordinates(event) });
   };
   target.addEventListener('pointermove', point);
   target.addEventListener('click', select);
