@@ -8,6 +8,13 @@ export interface Detector {
   close(): void;
 }
 export interface CameraAssets { wasm: string; handModel: string; faceModel: string }
+/** MediaPipe handedness assumes selfie-mirrored input. detectForVideo receives
+ * unmirrored camera pixels here, so swap labels (CSS mirroring would not do this).
+ * https://github.com/google-ai-edge/mediapipe/blob/master/docs/solutions/hands.md#multi_handedness
+ */
+export function cameraHandId(label?: string): string {
+  return label === 'Left' ? 'Right' : label === 'Right' ? 'Left' : 'Unknown';
+}
 export const defaultCameraAssets: CameraAssets = {
   wasm: 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.32/wasm',
   handModel: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',
@@ -27,7 +34,7 @@ export async function createDetector(mode: CameraMode, assets = defaultCameraAss
       detect(video, now) {
         const result = task.detectForVideo(video, now);
         return { face: [], hands: result.landmarks.map((landmarks, i) => ({
-          id: result.handedness[i]?.[0]?.categoryName ?? `unknown-${i}`, landmarks,
+          id: cameraHandId(result.handedness[i]?.[0]?.categoryName), landmarks,
         })) };
       },
       close: () => task.close(),

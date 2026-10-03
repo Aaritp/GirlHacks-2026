@@ -25,14 +25,18 @@ it.skipIf(!baseUrl)('persists input commands through HTTP and reads them using a
     pending.push(task); return task;
   };
   // Person C's actual actions must replace these test handlers for app-level acceptance.
-  const off = connectInputActions({ point() {}, dwell() {}, select() {}, dismiss() {},
+  const off = connectInputActions({ point() {}, dwell() {}, dismiss() {},
+    // Stand-in hit test selects the Plant action target.
+    select: () => save({ status: 'sprout' }),
     plant: () => save({ status: 'sprout' }), resize: (event) => save({ size: seed.size * event.scale }),
     confirm: () => save({ status: 'bloom' }),
   }, (error) => failures.push(error), bus);
   try {
     const hands = createHandInput({ bus });
     for (let now = 0; now <= 300; now += 50) hands.update([hand()], now);
-    for (let now = 350; now <= 1200; now += 50) hands.update([hand('Left', 0.4, 'fist')], now);
+    for (let now = 350; now <= 700; now += 50) hands.update([hand('Right', 0.4, 'pinch')], now);
+    for (let now = 750; now <= 950; now += 50) hands.update([hand('Right', 0.4, 'tap')], now);
+    for (let now = 1000; now <= 1400; now += 50) hands.update([hand()], now);
     await Promise.all(pending);
     bus.emit({ type: 'resize', scale: 1.5, source: 'mouse' }); await Promise.all(pending);
     bus.emit({ type: 'confirm', source: 'head' }); await Promise.all(pending);

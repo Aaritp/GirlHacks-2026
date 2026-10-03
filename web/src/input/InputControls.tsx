@@ -41,7 +41,7 @@ export function InputControls({ bus = inputBus, targetAt = domTargetAt, assets }
     let running = true;
     let mouseUntil = 0;
     const hitTest = (point: Point) => targetAtRef.current(point);
-    const hands = createHandInput({ bus, targetAt: hitTest });
+    const hands = createHandInput({ bus, getPosition: () => lastPoint.current });
     const head = createHeadInput({ bus, targetAt: hitTest, onCalibration: (value) => { if (active) setCalibration(value); } });
     const reset = () => { hands.reset(); head.reset(); if (active) setProgress(0); };
     recalibrate.current = () => head.calibrate();
@@ -82,9 +82,9 @@ export function InputControls({ bus = inputBus, targetAt = domTargetAt, assets }
     <p role="status">{status}</p>
     {error && <p role="alert">{error}</p>}
     {mode === 'head' && calibration < 1 && <progress aria-label="Head calibration" max={1} value={calibration} />}
-    <p>Point with your index finger; pinch and release to select. Pinch both hands, move apart or together, then release to resize.
-      Hold a fist to plant, thumbs up to confirm, or an open palm to dismiss. Relax between commands.
-      Head mode selects when you hold the cursor over a target until the ring fills.</p>
+    <p>Start with an open hand. Hold thumb and index finger together to move the cursor; release to park it.
+      Touch your middle fingertip to your thumb and release to select. Hold a left-hand thumbs-up to go back.
+      Use the buttons below to plant, resize or confirm. Head mode selects when you hold the cursor over a target until the ring fills.</p>
     <div role="group" aria-label="Forest actions">
       <button type="button" data-grove-target="input-plant" data-grove-input-action
         onClick={() => bus.emit({ type: 'plant', ...lastPoint.current, source })}>Plant</button>{' '}
@@ -95,7 +95,7 @@ export function InputControls({ bus = inputBus, targetAt = domTargetAt, assets }
       <button type="button" data-grove-target="input-confirm" data-grove-input-action
         onClick={() => bus.emit({ type: 'confirm', source })}>Confirm</button>{' '}
       <button type="button" data-grove-target="input-dismiss" data-grove-input-action
-        onClick={() => bus.emit({ type: 'dismiss', source })}>Dismiss</button>
+        onClick={() => bus.emit({ type: 'dismiss', source })}>Back</button>
     </div>
     <video ref={video} muted playsInline aria-hidden="true" style={{ position: 'fixed', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }} />
     {mode && tracking && cursor.source !== 'mouse' && <div aria-hidden="true" style={{

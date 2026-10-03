@@ -24,26 +24,42 @@ Enter/Space; no global keyboard shortcuts intercept text entry.
 
 | Input | Event / behavior |
 | --- | --- |
-| Index-finger pointing | Mirrored viewport `point`, smoothed over 80 ms |
-| Thumb/index pinch held 120–2000 ms, then released for 100 ms | One `select` at the pre-pinch cursor position |
-| Pinch both hands, change separation, release either while both remain visible | One relative `resize`, clamped to 0.25–4; no trailing select |
-| Fist held 650 ms | `plant` at the last pointing position |
-| Thumbs up held 650 ms | `confirm` |
-| Open palm held 650 ms | `dismiss` |
-| Head movement | Nose position relative to eye spacing, calibrated and smoothed into `point` |
-| Point/head held on an actionable target for 1100 ms | `dwell` progress followed by one `select` |
-| Plant / Smaller / Larger / Confirm / Dismiss buttons | Same bus commands via mouse, keyboard or tracked selection |
+| Hold thumb/index pinch, then move the hand | Relative, mirrored cursor movement from a stable palm anchor; 100 ms engagement debounce |
+| Release thumb/index pinch | Park the cursor exactly where it is; no click, drift or automatic hand dwell |
+| Touch middle fingertip to thumb for 60–800 ms, then release | One `select` at the parked cursor after 80 ms stable release |
+| Left-hand thumbs-up held 650 ms | One `dismiss` event, interpreted by the feature as Back |
+| Head movement | Average nose/eye landmarks, compensate translation, scale and roll, then filter into `point` |
+| Head cursor held on an actionable target for 1100 ms | `dwell` progress followed by one `select` |
+| Plant / Smaller / Larger / Confirm / Back buttons | Same bus commands via mouse, keyboard or tracked selection |
 
-Start with a relaxed pointing hand for 250 ms. Return to pointing between commands.
+Start with an open hand for 200 ms, then pinch to acquire the cursor. Release and
+pinch again to reposition your hand without moving the cursor (like lifting a mouse).
+Tap middle finger to thumb with the same controlling hand; allow 200 ms with the
+middle finger released before another tap. The cursor freezes as a tap approaches.
+Either hand can move/select. Left-hand Back also works while the right hand is
+controlling the cursor. Right thumbs-up, fists and open palms no longer execute
+commands. Two pinches freeze motion; use Smaller/Larger for explicit resizing.
+This supersedes the original fist/confirm/palm and two-hand resize shortcuts.
+
 Poses are geometric heuristics over MediaPipe landmarks, not a trained gesture
 classifier. Camera accuracy and thresholds need testing with real users, lighting,
-hand sizes and camera angles. A held command cannot repeat or change directly into
-another command until neutral. Pinch uses separate enter/exit thresholds. Tracking
+hand sizes and camera angles. A held Back command cannot repeat until neutral.
+Pinch and tap use separate enter/exit thresholds. Tracking
 loss, malformed landmarks, identity changes and frame gaps cancel pending actions.
-Resize commits on release, never on every frame; spans below 8% are rejected.
+The raw camera is unmirrored: handedness labels are swapped at the camera boundary
+following [MediaPipe's handedness convention](https://github.com/google-ai-edge/mediapipe/blob/master/docs/solutions/hands.md#multi_handedness).
+Verify anatomical left/right with a physical webcam when changing that pipeline.
+Back uses the existing `dismiss` contract, not browser history navigation; C supplies
+the app's back/cancel action. The isolated preview logs that event.
 
-Head mode first requires one second of steady, forward-facing calibration. Use
+Head mode first requires 1.5 seconds of steady, forward-facing calibration. Use
 Recalibrate after repositioning. Tracking loss cancels dwell but retains calibration.
+Calibration uses medians and measures the stationary noise floor. Smoothing adds
+a five-frame median, a noise-sized dead zone and adaptive response (220 ms for
+small corrections, down to 65 ms for larger motion). Hand motion uses a three-frame
+median and a smaller dead zone. Movement sensitivity is lower than the original
+head adapter; deliberate motion beyond the dead zone still reaches the screen edges.
+After face loss, five valid frames are required before cursor updates resume.
 Dwell only operates on targets returned by `targetAt`; blank space never selects.
 Movement resets incomplete dwell; completed dwell stays latched until leaving that
 target. The cursor ring and progress element show progress and clear on cancellation.
@@ -117,7 +133,7 @@ and [face landmarker](https://developers.google.com/edge/mediapipe/solutions/vis
 
 Run `npm run typecheck`, `npm test`, and `npm run build` from the root. Tests cover
 event delivery, stable calibration, one-shot dwell and cancellation, gesture
-debouncing, pinch/resize arbitration, tracking loss, native control exclusion,
+debouncing, pinch/tap/back arbitration, stationary jitter suppression, tracking loss, native control exclusion,
 cleanup including late async camera startup, and gesture → injected feature action
 → typed mock API updates. Mock state resets on a fresh instance/browser reload;
 these tests do not establish durable storage.
@@ -146,8 +162,8 @@ Real-service acceptance with A and C still required:
 
 1. Mount the wrapper with C's actual actions and use `VITE_USE_MOCKS=false` against
    A's Cosmos-backed routes. Select a real seed; note its ID and meeting partition.
-2. Plant via a hand gesture, resize via two hands and confirm via head dwell on the
-   toolbar. Verify C's intended state changes and exactly one mutation per committed
+2. Pinch-move to Plant and middle-tap to select it, then use Larger/Smaller and
+   confirm via head dwell on the toolbar. Verify C's intended state changes and exactly one mutation per committed
    action. Cursor/dwell frames must produce zero requests.
 3. Reload the browser and fetch the same grove. Verify status, size and provenance
    agree with the stored seed. Repeat with mouse/native keyboard actions and verify

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { startCamera, type Detector } from './camera';
+import { cameraHandId, startCamera, type Detector } from './camera';
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -20,6 +20,11 @@ function setup() {
   return { track, stream, doc, detector, options };
 }
 describe('camera lifecycle', () => {
+  it('normalizes unmirrored camera handedness and keeps unknown labels out of left-hand back', () => {
+    expect(cameraHandId('Right')).toBe('Left');
+    expect(cameraHandId('Left')).toBe('Right');
+    expect(cameraHandId()).toBe('Unknown');
+  });
   it('stops tracks, inference, video and listeners idempotently', async () => {
     const { options, track, detector, doc } = setup();
     const camera = startCamera(options); await camera.ready;

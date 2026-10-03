@@ -42,12 +42,16 @@ describe('single action owner', () => {
     // Actual forest business semantics belong to C; this does not ship an alternate store.
     const actions = emptyActions();
     actions.plant = () => { const task = api.updateSeed(seed.meetingId, seed.id, { status: 'sprout' }).then((saved) => { seed = saved; }); pending.push(task); return task; };
+    // Stand-in hit test: the parked cursor is over the Plant action target.
+    actions.select = (event) => actions.plant({ ...event, type: 'plant' });
     actions.resize = (event) => { const task = api.updateSeed(seed.meetingId, seed.id, { size: seed.size * event.scale }).then((saved) => { seed = saved; }); pending.push(task); return task; };
     actions.confirm = () => { const task = api.updateSeed(seed.meetingId, seed.id, { status: 'bloom' }).then((saved) => { seed = saved; }); pending.push(task); return task; };
     const off = connectInputActions(actions, (error) => { throw error; }, bus);
     const hands = createHandInput({ bus });
     for (let now = 0; now <= 300; now += 50) hands.update([hand()], now);
-    for (let now = 350; now <= 1400; now += 50) hands.update([hand('Left', 0.4, 'fist')], now);
+    for (let now = 350; now <= 700; now += 50) hands.update([hand('Right', 0.4, 'pinch')], now);
+    for (let now = 750; now <= 950; now += 50) hands.update([hand('Right', 0.4, 'tap')], now);
+    for (let now = 1000; now <= 1400; now += 50) hands.update([hand()], now);
     await Promise.all(pending);
     expect(seed.status).toBe('sprout'); expect(update).toHaveBeenCalledTimes(1);
     bus.emit({ type: 'resize', scale: 1.5, source: 'mouse' }); await Promise.all(pending);

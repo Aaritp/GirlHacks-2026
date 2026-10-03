@@ -17,7 +17,7 @@ function Preview() {
     <p>Diagnostics only. Actions below appear in the event log; this page does not save seeds.</p>
     <InputSurface actions={actions} onError={(reason) => setError(String(reason))}>
       <div data-grove-target="preview-seed" style={{ border: '2px solid #256c40', padding: '3rem', margin: '1rem 0' }}>
-        Point here, then pinch or dwell to select this target.
+        Pinch to move here, release to park, then tap middle finger to thumb to select. In head mode, dwell here.
       </div>
     </InputSurface>
     {error && <p role="alert">{error}</p>}
