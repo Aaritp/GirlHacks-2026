@@ -83,4 +83,11 @@ with speaker diarization (`ConversationTranscriber`) and refreshes the token eve
 Browser mocks still provide deterministic per-utterance extraction (not AI) and reject
 Speech with 501. Leaves and whiteboard endpoints remain 501 integration points.
 
+Azure OpenAI: use `api/shared/openai_client.py` (`complete_json` / `complete_text`) for any
+model call. It targets reasoning deployments such as gpt-5-mini: it sends `reasoning_effort`
+and optional `max_completion_tokens`, and never `temperature`, `top_p` or `max_tokens`.
+Extraction uses effort `low`; Whispering Leaves should use `minimal`.
+
+Azure SDK request logging is limited to warnings (`GROVEKEEPER_SDK_LOG_LEVEL=INFO` restores it).
+
 Python uses separate blueprints for each owner; register new ones in `function_app.py`.

@@ -26,6 +26,7 @@ def _clean(document: dict):
 class CosmosStore:
     def __init__(self, database):
         """`database` is an azure.cosmos DatabaseProxy (or a compatible test double)."""
+        # No per-container throughput: containers share the database's RU/s.
         try:
             self.containers = {
                 name: database.create_container_if_not_exists(
@@ -120,6 +121,20 @@ class CosmosStore:
         return Grove(seeds=self.list_seeds(meeting_id), roots=self.list_roots(meeting_id))
 
 
+DEFAULT_DATABASE_THROUGHPUT = 1000
+
+
+def _require_shared_throughput(database, database_name: str):
+    # create_database_if_not_exists ignores offer_throughput for an existing database. Without
+    # shared throughput, each container would get its own RU/s and can exceed the account limit.
+    try:
+        database.get_throughput()
+    except CosmosResourceNotFoundError:
+        raise StorageNotConfigured(
+            f"Cosmos database '{database_name}' exists without shared throughput. Delete it so it can be "
+            "recreated with shared RU/s, or set AZURE_COSMOS_DATABASE_THROUGHPUT=serverless.") from None
+
+
 _cache: dict[tuple[str, str], CosmosStore] = {}
 _cache_lock = Lock()
 
@@ -131,18 +146,32 @@ def cosmos_settings():
     missing = [name for name, value in (("AZURE_COSMOS_ENDPOINT", endpoint), ("AZURE_COSMOS_KEY", key)) if not value]
     if missing:
         raise StorageNotConfigured(f"Cosmos storage is selected but missing: {', '.join(missing)}.")
-    return endpoint, key, database
+    return endpoint, key, database, database_throughput()
+
+
+def database_throughput():
+    """Shared RU/s for the whole database (default 1000). 'serverless' or 0 sets none."""
+    raw = os.getenv("AZURE_COSMOS_DATABASE_THROUGHPUT", "").strip().lower() or str(DEFAULT_DATABASE_THROUGHPUT)
+    if raw in ("serverless", "none", "0"):
+        return None
+    if not raw.isdigit() or int(raw) < 400:
+        raise StorageNotConfigured("AZURE_COSMOS_DATABASE_THROUGHPUT must be 'serverless' or at least 400.")
+    return int(raw)
 
 
 def cosmos_store_from_env():
     """One client per process and account, reused across invocations. Failures are not cached."""
-    endpoint, key, database_name = cosmos_settings()
+    endpoint, key, database_name, throughput = cosmos_settings()
     cache_key = (endpoint, database_name)
     with _cache_lock:
         if cache_key not in _cache:
             try:
                 client = CosmosClient(endpoint, credential=key)
-                database = client.create_database_if_not_exists(id=database_name)
+                if throughput is None:
+                    database = client.create_database_if_not_exists(id=database_name)
+                else:
+                    database = client.create_database_if_not_exists(id=database_name, offer_throughput=throughput)
+                    _require_shared_throughput(database, database_name)
             except (AzureError, ValueError) as exc:
                 raise StorageUnavailable("Cosmos account could not be reached") from exc
             _cache[cache_key] = CosmosStore(database)

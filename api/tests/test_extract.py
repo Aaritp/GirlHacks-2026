@@ -235,3 +235,27 @@ def test_extract_rejects_cross_meeting_utterances(backend, openai_env):
 def test_similarity_ignores_filler_words():
     assert similarity("Send the payroll checklist", "send payroll checklist") == 1
     assert similarity("Draft the FAQ", "Book the training room") == 0
+
+
+def test_model_call_uses_reasoning_model_parameters(openai_env):
+    import openai
+    from types import SimpleNamespace
+    sent = {}
+
+    class FakeCompletions:
+        def create(self, **kwargs):
+            sent.update(kwargs)
+            message = SimpleNamespace(content=json.dumps({"items": FIRST_WINDOW}))
+            return SimpleNamespace(choices=[SimpleNamespace(finish_reason="stop", message=message)])
+
+    class FakeClient:
+        def __init__(self, base_url, api_key, timeout, max_retries):
+            sent["base_url"] = base_url
+            self.chat = SimpleNamespace(completions=FakeCompletions())
+
+    openai_env.setattr(openai, "OpenAI", FakeClient)
+    assert model.call_model({"referenceDate": "2026-10-03", "utterances": []}) == FIRST_WINDOW
+    assert sent["base_url"] == "https://example.openai.azure.com/openai/v1/"
+    assert sent["model"] == "gpt-extract"
+    assert sent["reasoning_effort"] == "low"
+    assert not {"temperature", "top_p", "max_tokens"} & set(sent)

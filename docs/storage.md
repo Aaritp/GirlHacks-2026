@@ -63,8 +63,14 @@ IDs from meeting, kind, source utterance and text), so a conflict means "already
 
 Containers `seeds`, `roots`, `utterances`, `sources`, each partitioned on `/meetingId`.
 Documents are the wire models' JSON plus Cosmos system fields (stripped on read). The adapter
-creates the database and containers if missing on first use (works for serverless and
-provisioned accounts). Queries always pass `partition_key`, so no request crosses meetings.
+creates the database and containers if missing on first use. Queries always pass
+`partition_key`, so no request crosses meetings.
+
+Throughput: the database is created with **shared** throughput
+(`AZURE_COSMOS_DATABASE_THROUGHPUT`, default 1000 RU/s) and containers get none of their own,
+so all four fit under a 1000 RU/s account limit. Set it to `serverless` for a serverless
+account. Shared throughput cannot be added to an existing database: if `grovekeeper` already
+exists without it, storage returns 503 `STORAGE_NOT_CONFIGURED` asking you to delete it.
 
 Not yet provided: cross-meeting scans (needed by a health timer) and deletes. Ask before
 adding them so both backends and the contract tests in `api/tests/test_store.py` stay in sync.

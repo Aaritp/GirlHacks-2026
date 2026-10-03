@@ -114,7 +114,8 @@ def test_cosmos_corrupt_document_is_a_storage_fault():
 
 @pytest.fixture
 def clean_env(monkeypatch):
-    for name in ("GROVEKEEPER_STORAGE_MODE", "AZURE_COSMOS_ENDPOINT", "AZURE_COSMOS_KEY", "AZURE_COSMOS_DATABASE"):
+    for name in ("GROVEKEEPER_STORAGE_MODE", "AZURE_COSMOS_ENDPOINT", "AZURE_COSMOS_KEY", "AZURE_COSMOS_DATABASE",
+                 "AZURE_COSMOS_DATABASE_THROUGHPUT"):
         monkeypatch.delenv(name, raising=False)
     cosmos._cache.clear()
     yield monkeypatch
@@ -141,9 +142,9 @@ def test_cosmos_selected_by_endpoint_and_client_reused(clean_env):
         def __init__(self, endpoint, credential):
             created.append((endpoint, credential))
 
-        def create_database_if_not_exists(self, id):
+        def create_database_if_not_exists(self, id, offer_throughput=None):
             assert id == "grovekeeper"
-            return FakeDatabase()
+            return FakeDatabase(throughput=offer_throughput)
 
     clean_env.setattr(cosmos, "CosmosClient", FakeClient)
     clean_env.setenv("AZURE_COSMOS_ENDPOINT", "https://example.documents.azure.com:443/")
@@ -159,7 +160,7 @@ def test_unreachable_cosmos_is_unavailable_and_not_cached(clean_env):
         def __init__(self, endpoint, credential):
             pass
 
-        def create_database_if_not_exists(self, id):
+        def create_database_if_not_exists(self, id, offer_throughput=None):
             raise service_error()
 
     clean_env.setattr(cosmos, "CosmosClient", BrokenClient)
@@ -169,3 +170,60 @@ def test_unreachable_cosmos_is_unavailable_and_not_cached(clean_env):
     with pytest.raises(StorageUnavailable):
         get_store()
     assert cosmos._cache == {}
+
+
+def cosmos_env(monkeypatch, existing=None, **settings):
+    """Points storage at a fake account. `existing` simulates a database that already exists."""
+    calls = []
+
+    class FakeClient:
+        def __init__(self, endpoint, credential):
+            pass
+
+        def create_database_if_not_exists(self, id, **options):
+            calls.append(options)
+            return existing if existing is not None else FakeDatabase(throughput=options.get("offer_throughput"))
+
+    monkeypatch.setattr(cosmos, "CosmosClient", FakeClient)
+    monkeypatch.setenv("GROVEKEEPER_STORAGE_MODE", "cosmos")
+    monkeypatch.setenv("AZURE_COSMOS_ENDPOINT", "https://example.documents.azure.com:443/")
+    monkeypatch.setenv("AZURE_COSMOS_KEY", "secret")
+    for name, value in settings.items():
+        monkeypatch.setenv(name, value)
+    return calls
+
+
+def test_database_gets_shared_throughput_and_containers_get_none(clean_env):
+    database = FakeDatabase(throughput=1000)
+    calls = cosmos_env(clean_env, existing=database)
+    get_store()
+    assert calls == [{"offer_throughput": 1000}]
+    assert set(database.container_options) == {"seeds", "roots", "utterances", "sources"}
+    # No per-container throughput, so every container shares the database's RU/s.
+    assert all(options == {} for options in database.container_options.values())
+
+
+def test_existing_database_without_shared_throughput_is_rejected_clearly(clean_env):
+    old = FakeDatabase(throughput=None)
+    cosmos_env(clean_env, existing=old)
+    with pytest.raises(StorageNotConfigured, match="exists without shared throughput. Delete it"):
+        get_store()
+    assert cosmos._cache == {}
+    assert old.containers == {}
+
+
+def test_serverless_and_custom_throughput(clean_env):
+    calls = cosmos_env(clean_env, AZURE_COSMOS_DATABASE_THROUGHPUT="serverless")
+    get_store()
+    assert calls == [{}]
+    cosmos._cache.clear()
+    calls = cosmos_env(clean_env, AZURE_COSMOS_DATABASE_THROUGHPUT="400")
+    get_store()
+    assert calls == [{"offer_throughput": 400}]
+
+
+@pytest.mark.parametrize("value", ["100", "lots", "-5"])
+def test_invalid_throughput_is_a_configuration_error(clean_env, value):
+    cosmos_env(clean_env, AZURE_COSMOS_DATABASE_THROUGHPUT=value)
+    with pytest.raises(StorageNotConfigured, match="AZURE_COSMOS_DATABASE_THROUGHPUT"):
+        get_store()

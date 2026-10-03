@@ -59,12 +59,20 @@ class FakeContainer:
 
 
 class FakeDatabase:
-    def __init__(self):
+    def __init__(self, throughput=None):
         self.containers: dict[str, FakeContainer] = {}
+        self.throughput = throughput
+        self.container_options: dict[str, dict] = {}
 
-    def create_container_if_not_exists(self, id, partition_key):
+    def create_container_if_not_exists(self, id, partition_key, **options):
+        self.container_options[id] = options
         self.containers.setdefault(id, FakeContainer(id, partition_key["paths"][0]))
         return self.containers[id]
+
+    def get_throughput(self):
+        if self.throughput is None:
+            raise CosmosResourceNotFoundError(status_code=404, message="Could not find ThroughputProperties")
+        return self.throughput
 
 
 def service_error():
