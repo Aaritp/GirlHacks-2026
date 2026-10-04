@@ -1,5 +1,5 @@
 import type {
-  ComposeRequest, ComposeResult, ExtractRequest, ExtractSourceRequest, Grove, Seed, SeedPatch,
+  ComposeRequest, ComposeResult, ExtractRequest, Grove, Seed, SeedPatch,
   SpeechToken, SuggestRequest, Suggestions, Utterance, UtteranceList, WhiteboardRequest, WhiteboardResult,
 } from '../types';
 
@@ -7,8 +7,6 @@ export interface GroveApi {
   getSpeechToken(): Promise<SpeechToken>;
   saveUtterance(utterance: Utterance): Promise<Utterance>;
   extract(request: ExtractRequest): Promise<Grove>;
-  /** Saves an email/chat/document/Slack Source and extracts seeds from its text. */
-  extractSource(request: ExtractSourceRequest): Promise<Grove>;
   /** A meeting's saved transcript, ordered by startSec. Unknown meetings return an empty list. */
   getUtterances(meetingId: string): Promise<UtteranceList>;
   createSeed(seed: Seed): Promise<Seed>;

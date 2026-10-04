@@ -12,7 +12,6 @@ new objects and retain IDs when retrying.
 | POST | `/speech-token` | — | `{ token, region }` |
 | POST | `/utterances` | `Utterance` | Saved `Utterance` |
 | POST | `/extract` | `{ meetingId, utterances: Utterance[], accountId? }` | `{ seeds: Seed[], roots: Root[] }` |
-| POST | `/extract/source` | `{ source: Source }` (email, chat, document, slack; `text` required) | `{ seeds: Seed[], roots: Root[] }` |
 | GET | `/meetings/{meetingId}/utterances` | — | `{ utterances: Utterance[] }` ordered by `startSec` |
 | GET | `/accounts` | — | `Account[]` sorted by name |
 | POST | `/accounts` | `Account` | Saved `Account` (201); 409 if the id exists |
@@ -62,9 +61,10 @@ new objects and retain IDs when retrying.
   unchanged for every seed. Their seeds have `timestampSec: null`.
 - `/extract` with `accountId` links the meeting's Source to that account on first use; later
   windows inherit it. A different `accountId` for an already-linked meeting → 409 `CONFLICT`.
-- `/extract/source` saves the Source, then extracts. Re-sending the same source returns the
-  same seeds; the same id with different text/account/type → 409 `CONFLICT`. Model failure →
-  502 with no seeds. Meeting text is never echoed in errors.
+- Text sources (email, chat, document, Slack) are ingested by `api/ingest`, which saves the
+  Source and calls `extract_and_save(..., source=source)` with utterance-shaped chunks of its
+  text. Those chunks are evidence only: they are not saved as utterances, and the seeds point at
+  the source (`sourceType` = source type, `sourceId` = source id, `timestampSec: null`).
 - `GET /meetings/{id}/utterances` returns an empty list for an unknown meeting (not 404).
 - `GET /accounts/{id}/timeline` returns every Source of the account, newest `createdAt` first,
   each with the seeds extracted from it (`seeds` is empty when there are none). Unknown

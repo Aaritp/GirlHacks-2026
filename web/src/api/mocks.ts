@@ -44,9 +44,6 @@ export function createMockApi(initial: Grove = demoGrove): GroveApi {
       const ids = new Set(input.map((item) => `mock-${item.id}`));
       return { seeds: grove(meetingId).seeds.filter((seed) => ids.has(seed.id)), roots: [] };
     },
-    async extractSource() {
-      throw new ApiError(501, 'NOT_IMPLEMENTED', 'Text extraction needs Azure OpenAI; mocks do not invent seeds from text.');
-    },
     async getUtterances(meetingId) {
       return structuredClone({
         utterances: [...utterances.values()].filter((item) => item.meetingId === meetingId)
