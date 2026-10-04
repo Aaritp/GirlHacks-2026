@@ -1,8 +1,7 @@
 # Person B — Grovekeeper 2.0
 
-Implemented in the isolated `feat/ingest-slack` worktree based on main
-`dbaba29`. Submitted on `feat/ingest-slack` for review; do not merge until the
-foundation interfaces and live acceptance checks below are resolved.
+Implemented in the isolated `feat/ingest-slack` worktree, updated from main
+`092e4dd` (account backend and dashboard). Keep the PR unmerged pending live acceptance.
 The original checkout and its uncommitted camera-disable changes are preserved.
 
 ## Try the UI
@@ -50,12 +49,11 @@ backend; mock uploads return an explicit 501. Browser mock data resets on reload
 - UI is keyboard/mouse only. No computer-vision branch code or MediaPipe dependency
   was brought into this worktree.
 
-## Foundation handoff — required before live acceptance
+## Foundation integration
 
-Prisha's 2.0 account storage has not landed in current main. This implementation
-does **not** create another account container/store or fake production accounts.
-The real routes fail explicitly with 503 ACCOUNT_FOUNDATION_PENDING until these
-shared store methods are supplied:
+Prisha's account storage is now integrated. Ingestion and follow-up use these shared
+methods; backend tests create real Account models in the memory/fake-Cosmos stores
+instead of injecting account lookup doubles:
 
 ```python
 get_account(account_id)                     # account model/dict, or None
@@ -63,10 +61,11 @@ list_account_seeds(account_id)               # all account seeds, including meet
 list_account_sources(account_id)             # all account sources, including meetings
 ```
 
-The UI expects `GET /api/accounts -> { accounts: Account[] }`, where Account has
-id, name, aliases, industry, contacts. Align this one client mapping if the shared
-foundation chooses another response envelope. No production GET/accounts route is
-implemented here: accounts remain Prisha's ownership.
+The UI uses shared Account/AccountContact types and the foundation's bare-array
+`GET /api/accounts -> Account[]` response. Account routes/storage remain Prisha's implementation.
+The merged dashboard is available at `/?accounts` or `/?account=ID`.
+Main still exposes `/extract/source`; it is preserved for compatibility during this
+merge, while the importer exclusively uses `/ingest`.
 
 Shared edits to review with Prisha:
 
@@ -89,15 +88,16 @@ and real meetings. Person C can use returned source.meetingId to display importe
 seeds immediately, then migrate to the shared account dashboard.
 
 Slack bindings use existing sources storage in partition `slack-bindings`.
-Checkpoints use the account ingestion partition. Timeline/source queries must filter
-`recordType == "source"` so internal binding/checkpoint records never appear as
-client interactions. Checkpoints are append-only for safe concurrent sync; compacting
+Checkpoints use the account ingestion partition. The merged dashboard's timeline builder
+filters `recordType == "source"`, as does follow-up context, so internal records never
+appear as client interactions. Checkpoints are append-only for safe concurrent sync; compacting
 old checkpoints is future maintenance for a larger deployment.
 
 App.tsx adds the Add to grove view and a path back to the existing forest, reusing one
 mock GroveApi. Person C should embed IngestPanel on the final account dashboard
-instead of duplicating API calls or source persistence. Existing forest labels still
-belong to C; its inspector must learn the expanded source/kind labels.
+instead of duplicating API calls or source persistence. Main now supplies expanded
+source/kind labels in the forest inspector. Import chunks are not saved as meeting
+utterances; email sender display names are normalized and quotes are capped at 500 characters.
 
 ## Slack setup (not provisioned here)
 
@@ -143,8 +143,7 @@ preserving text after errors, editable draft copying and paste size limits.
 Not yet verified: actual Azure OpenAI responses, actual Cosmos durability/restart,
 Slack workspace/token/scopes, real browser reload across the final account
 dashboard, or visual browser QA. The in-app browser automation connection failed
-before opening a page. The required account methods are injected test doubles in
-tests, not a substitute production implementation.
+before opening a page. Tests now exercise the shared account methods directly.
 
 Live acceptance after foundation integration: ingest one email and one PDF, reload
 the account dashboard and follow their citations; sync a new Slack message, sync

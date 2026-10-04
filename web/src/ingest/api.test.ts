@@ -5,7 +5,7 @@ import { createMockApi } from '../api/mocks';
 
 describe('Person B API', () => {
   it('uses typed HTTP routes and exposes upstream errors without fixture fallback', async () => {
-    const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(Response.json({ accounts: [] }))
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(Response.json([]))
       .mockResolvedValueOnce(Response.json({ subject: 'Subject', body: 'Body' }))
       .mockResolvedValueOnce(Response.json({ error: { code: 'SLACK_RATE_LIMITED', message: 'Try later.' } }, { status: 429 }));
     const api = createIngestApi('/api', fetcher);

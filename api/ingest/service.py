@@ -3,6 +3,7 @@ import json
 import re
 from datetime import datetime, timezone
 from email.parser import Parser
+from email.utils import parseaddr
 from email import policy
 
 from extract.model import call_model
@@ -32,7 +33,9 @@ def parse_messages(kind, text):
                 payload = email.get_payload()
                 # Plain pasted threads only; no MIME attachments or HTML rendering.
                 body = payload if isinstance(payload, str) else part
-                messages.append(Message(author=str(email.get("From", "Unknown")),
+                sender = str(email.get("From", "Unknown"))
+                name, address = parseaddr(sender)
+                messages.append(Message(author=name or address or sender,
                     recipients=[str(v) for v in email.get_all("To", []) + email.get_all("Cc", [])],
                     timestamp=str(email.get("Date")) if email.get("Date") else None, text=body.strip() or part))
             else:

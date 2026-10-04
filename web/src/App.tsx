@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { AccountsApp, accountsApi } from './accounts';
 import { api, usingMocks } from './api';
 import { createMockApi } from './api/mocks';
 import { DEMO_MEETING_ID, demoSource } from './api/fixtures';
@@ -13,7 +14,7 @@ import { createMockIngestApi } from './ingest/mocks';
 const groveApi = usingMocks ? createMockApi(createForestDemo()) : api;
 const ingestApi = usingMocks ? createMockIngestApi(groveApi) : createIngestApi(import.meta.env.VITE_API_BASE_URL || '/api');
 
-export function App() {
+function MeetingGrove() {
   const parameters = new URLSearchParams(window.location.search);
   const [accountGrove, setAccountGrove] = useState<{ id: string; title: string } | null>(null);
   const [view, setView] = useState<'forest' | 'ingest'>('forest');
@@ -36,4 +37,10 @@ export function App() {
       </ForestWorkspace>}
     </>
   );
+}
+
+export function App() {
+  const parameters = new URLSearchParams(window.location.search);
+  if (parameters.has('accounts') || parameters.has('account')) return <AccountsApp api={accountsApi} demo={usingMocks} />;
+  return <MeetingGrove />;
 }

@@ -21,7 +21,7 @@ export function createMockApi(initial: Grove = demoGrove): GroveApi {
       utterances.set(key(utterance.meetingId, utterance.id), structuredClone(utterance));
       return structuredClone(utterance);
     },
-    async extract({ meetingId, utterances: input }) {
+    async extract({ meetingId, utterances: input, accountId = null }) {
       if (input.length < 1 || input.length > 200) {
         throw new ApiError(400, 'INVALID_REQUEST', 'Provide between 1 and 200 utterances.');
       }
@@ -37,11 +37,21 @@ export function createMockApi(initial: Grove = demoGrove): GroveApi {
             kind: 'commitment', status: 'seed', health: 1,
             sourceType: item.via === 'leaves' ? 'leaves' : 'meeting', sourceId: meetingId,
             timestampSec: item.startSec, lastActivity: new Date().toISOString(), size: 1,
+            accountId, quote: item.text,
           });
         }
       }
       const ids = new Set(input.map((item) => `mock-${item.id}`));
       return { seeds: grove(meetingId).seeds.filter((seed) => ids.has(seed.id)), roots: [] };
+    },
+    async extractSource() {
+      throw new ApiError(501, 'NOT_IMPLEMENTED', 'Text extraction needs Azure OpenAI; mocks do not invent seeds from text.');
+    },
+    async getUtterances(meetingId) {
+      return structuredClone({
+        utterances: [...utterances.values()].filter((item) => item.meetingId === meetingId)
+          .sort((a, b) => a.startSec - b.startSec || a.id.localeCompare(b.id)),
+      });
     },
     async createSeed(seed) {
       const identity = key(seed.meetingId, seed.id);

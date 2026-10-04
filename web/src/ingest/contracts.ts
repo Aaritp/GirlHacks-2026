@@ -1,6 +1,7 @@
 import type { Seed, Source, Root } from '../types';
 
-export interface Account { id: string; name: string; aliases: string[]; industry: string; contacts: string[] }
+export type { Account } from '../types';
+import type { Account } from '../types';
 export type IngestSourceType = 'email' | 'chat' | 'document' | 'slack';
 export interface Message { author: string; recipients?: string[]; timestamp?: string | null; text: string; rawText?: string | null; externalId?: string }
 export interface IngestRequest {

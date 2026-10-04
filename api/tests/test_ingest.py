@@ -14,16 +14,14 @@ from slack_sync.client import SlackClient
 from followup import draft_followup
 from shared.store import MemoryStore, StorageUnavailable
 from shared.cosmos import CosmosStore
-from shared.models import SeedPatch
+from shared.models import Account, SeedPatch
 from fake_cosmos import FakeDatabase
 
 @pytest.fixture(params=["memory", "cosmos"])
 def store(request):
     backend = MemoryStore() if request.param == "memory" else CosmosStore(FakeDatabase())
-    # Pending Prisha account interface, injected into the EXISTING shared store.
-    backend.get_account = lambda account_id: {"id": account_id, "name": account_id} if account_id in ("contoso", "fabrikam") else None
-    backend.list_account_seeds = lambda account_id: backend.list_seeds(account_partition(account_id))
-    backend.list_account_sources = lambda account_id: backend.list_sources(account_partition(account_id))
+    for account_id in ("contoso", "fabrikam"):
+        backend.create_account(Account(id=account_id, name=account_id))
     return backend
 
 def model(window):
@@ -71,7 +69,7 @@ def test_unknown_account_and_missing_foundation_fail_closed(store):
         ingest(store, request("missing"), model)
     assert exc.value.status == 404
     with pytest.raises(FeatureError) as exc:
-        ingest(MemoryStore(), request(), model)
+        ingest(object(), request(), model)
     assert exc.value.code == "ACCOUNT_FOUNDATION_PENDING"
 
 def test_chat_metadata_and_validation():
@@ -221,3 +219,28 @@ def test_empty_extraction_is_saved_and_not_retried(store):
     assert result["seeds"] == []
     ingest(store, request(), empty)
     assert empty.call_count == 1
+
+@pytest.mark.parametrize("kind", ["email", "chat", "document", "slack"])
+def test_import_chunks_are_not_saved_as_meeting_utterances(store, kind):
+    from ingest.contracts import Message
+    req = IngestRequest(accountId="contoso", sourceType=kind, title="Import",
+        messages=[Message(author="Alex", text="I will send the checklist.",
+                          externalId="C123456:1.000001" if kind == "slack" else None)])
+    result = ingest(store, req, model)
+    assert result["seeds"] and result["source"]["messages"]
+    assert store.list_utterances(result["source"]["meetingId"]) == []
+
+@pytest.mark.parametrize("sender,expected", [
+    ('"Alex Smith" <alex@example.com>', "Alex Smith"),
+    ("alex@example.com", "alex@example.com"),
+    ("Alex", "Alex"),
+])
+def test_email_owner_uses_display_name_and_preserves_original_header(store, sender, expected):
+    req = request().model_copy(update={"text": f"From: {sender}\nTo: Sam\n\nI will send the checklist."})
+    result = ingest(store, req, model)
+    assert result["seeds"][0]["owner"] == expected
+    assert f"From: {sender}" in result["source"]["text"]
+
+def test_ingest_quote_is_limited_to_500_characters(store):
+    result = ingest(store, request(text="I will send the checklist. " * 30), model)
+    assert len(result["seeds"][0]["quote"]) == 500

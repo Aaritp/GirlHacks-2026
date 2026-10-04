@@ -18,7 +18,8 @@ function setup() {
 describe('forest interactions', () => {
   it('records progress directly from the garden and only blooms after a successful save', async () => {
     const { api } = setup();
-    await screen.findByRole('button', { name: 'Mark complete' });
+    // First render in the file also pays for module and image setup; allow more than the default second.
+    await screen.findByRole('button', { name: 'Mark complete' }, { timeout: 5000 });
     const seed = (await api.getGrove(meetingId)).seeds[0];
     fireEvent.click(screen.getByRole('button', { name: `Record progress for ${seed.text}` }));
     await waitFor(async () => expect((await api.getGrove(meetingId)).seeds[0].status).toBe('sprout'));
