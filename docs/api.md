@@ -52,17 +52,42 @@ new objects and retain IDs when retrying.
 ```
 
 400 `INVALID_REQUEST`, 404 `NOT_FOUND`, 409 `CONFLICT`, 501 `NOT_IMPLEMENTED`,
-503 `STORAGE_NOT_CONFIGURED`. The typed HTTP client throws `ApiError` with `status`,
-`code`, and `message`. Validation responses do not echo meeting text or secrets.
+502 `UPSTREAM_ERROR` (Azure Speech/OpenAI failed), 503 `STORAGE_NOT_CONFIGURED`,
+503 `STORAGE_UNAVAILABLE` (configured storage failed), 503 `SERVICE_NOT_CONFIGURED`
+(Azure service settings missing; the message names the setting, never its value).
+The typed HTTP client throws `ApiError` with `status`, `code`, and `message`.
+Validation responses do not echo meeting text or secrets.
 
-## Foundation implementation status
+## Implementation status
 
-Browser mocks support seed CRUD, utterance saves, fixture suggestions, word joining,
-and deterministic per-utterance mock extraction. Speech and whiteboard mocks reject
-with 501. HTTP supports health and opt-in memory seed/utterance storage; AI/Speech/OCR
-remain explicit 501 integration points. Roots are fixture-only until persistence is
-added. Do not mistake a passing scaffold health check for Azure service readiness.
+Storage: Cosmos DB or explicit memory mode for seeds, roots, utterances and sources; see
+[storage.md](storage.md) for the shared `GroveStore` interface. `getGrove` now returns
+persisted roots.
+
+`/speech-token` exchanges the server-held Speech key for a 10-minute token
+(`Cache-Control: no-store`). The browser streams mic audio straight to Azure Speech
+with speaker diarization (`ConversationTranscriber`) and refreshes the token every 9 minutes.
+
+`/extract` saves the meeting Source and the request's utterances, asks Azure OpenAI
+(structured outputs) for commitments and decisions, then validates the result:
+- Each item must cite utterance IDs from the request; items without them are dropped.
+  `timestampSec` is the earliest cited utterance's `startSec`; `sourceId` is the meeting.
+- Owner is kept only if it is a cited speaker label (not "Unknown speaker") or a name in
+  the cited text. Deadline is kept only if it is a valid date and its quoted evidence
+  appears in the cited text. Otherwise both stay null.
+- Deduplication: same kind + same anchor timestamp + similar text, or a near-identical
+  restatement with a compatible owner, returns the existing seed unchanged (progress is
+  preserved). New seed/root IDs are deterministic, so concurrent retries resolve to one.
+- Model failure → 502 with no seeds created. Missing OpenAI settings → 503 before saving.
+
+Browser mocks still provide deterministic per-utterance extraction (not AI) and reject
+Speech with 501. Leaves and whiteboard endpoints remain 501 integration points.
+
+Azure OpenAI: use `api/shared/openai_client.py` (`complete_json` / `complete_text`) for any
+model call. It targets reasoning deployments such as gpt-5-mini: it sends `reasoning_effort`
+and optional `max_completion_tokens`, and never `temperature`, `top_p` or `max_tokens`.
+Extraction uses effort `low`; Whispering Leaves should use `minimal`.
+
+Azure SDK request logging is limited to warnings (`GROVEKEEPER_SDK_LOG_LEVEL=INFO` restores it).
 
 Python uses separate blueprints for each owner; register new ones in `function_app.py`.
-Add Cosmos, Speech, OpenAI, Vision, and Blob SDK dependencies when their integrations
-are implemented. No cloud resources are created by this foundation.
