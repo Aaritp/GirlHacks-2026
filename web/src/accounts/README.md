@@ -18,6 +18,8 @@ real Cosmos account.
 - **Account grove**: forest and plain list of the same seeds, with kind and owner filters.
 - **Seed details**: owner, deadline, the quote it came from, and its source. Mark done or
   reopen. The plant changes only after the save succeeds.
+  A seed closed by a self-updating commitment also shows "Completed in": the source and
+  the quote that showed it was finished. Reopening clears that evidence.
 - **Ask the Grove slot**: a marked region scoped to the open account. Empty until Person D's
   component exists.
 

@@ -37,6 +37,9 @@ export function createAccountsDemo(now = Date.now()): AccountsData {
   const said = (meetingId: string, lines: [string, string][]): Utterance[] => lines.map(([speaker, text], index) =>
     ({ id: `${meetingId}-u${index + 1}`, meetingId, speaker, text, startSec: 12 + index * 19, via: 'voice' }));
 
+  // A self-updating commitment: the Slack thread showed the checklist was sent, and a user confirmed it.
+  const checklistDone = { sourceId: slack.id, sourceType: slack.type, quote: 'Checklist went out yesterday.' };
+
   return {
     utterances: [
       ...said(kickoff.meetingId, [
@@ -58,7 +61,7 @@ export function createAccountsDemo(now = Date.now()): AccountsData {
     timelines: [
       { accountId: 'acct-northwind', items: [
         { source: kickoff, seeds: [
-          seed(kickoff, 'nw-checklist', 'commitment', 'Send the integration checklist', 'I will send the integration checklist this week.', 'Alex', -2, 'bloom'),
+          { ...seed(kickoff, 'nw-checklist', 'commitment', 'Send the integration checklist', 'I will send the integration checklist this week.', 'Alex', -2, 'bloom'), completedBy: checklistDone },
           seed(kickoff, 'nw-phased', 'decision', 'Phased rollout, hourly staff first', 'Agreed, we go with the phased rollout, hourly staff first.', null, null),
           seed(kickoff, 'nw-cutover', 'customer_need', 'Cutover finished before the January pay run', 'We need the cutover finished before the January pay run.', null, null),
         ] },
