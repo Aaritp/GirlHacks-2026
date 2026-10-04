@@ -1,7 +1,8 @@
 # Leaves integration handoff
 
-Branch: feat/whispering-leaves. Merged main at b02fb34, including the shared account
-backend, account dashboard, online capture, and transcript shared-clock support.
+Branch: feat/whispering-leaves. Merged main at 39d1646, including the shared account
+backend, account dashboard, online capture, shared clock, account-to-meeting links,
+and the garden overlap fix.
 
 ## Shared contracts and app wiring
 
@@ -33,10 +34,11 @@ audio; routing output into the call still needs operator setup. Stop capture
 before demonstrating Leaves to avoid recapturing its speech. Pending save retries
 are panel-local and should be resolved before changing names or reloading.
 
-The transcript accepts accountId, but the existing App meeting route does not yet
-pass it. Account linkage remains a separate team integration; this PR does not
-invent cross-account context or change the extraction pipeline. Person B owns
-ingestion and Slack.
+The account's Start a meeting link supplies accountId. App passes it to both
+transcript and Leaves extraction, so even a Leaves-first contribution creates the
+correct account link. Tests cover that ordering and stable retries. This PR does
+not invent cross-account context or change the extraction pipeline. Person B owns
+ingestion and Slack. Mock accounts and the mock meeting grove remain separate.
 
 See validation.md for the final check results and README.md for the five-minute
 demo with clearly labeled backups.

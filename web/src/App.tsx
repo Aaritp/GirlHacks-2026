@@ -11,7 +11,7 @@ import { TranscriptPanel } from './transcript/TranscriptPanel';
 // One API instance for every feature, so extracted seeds land in the grove the forest shows.
 const groveApi = usingMocks ? createMockApi(createForestDemo()) : api;
 
-function MeetingGrove({ meetingId }: { meetingId: string }) {
+function MeetingGrove({ meetingId, accountId }: { meetingId: string; accountId: string | null }) {
   const title = meetingId === DEMO_MEETING_ID ? demoSource.title : `Meeting ${meetingId}`;
   const [meetingStartedAt] = useState(() => Date.now());
   const [userName, setUserName] = useState('');
@@ -21,10 +21,11 @@ function MeetingGrove({ meetingId }: { meetingId: string }) {
 
   return (
     <ForestWorkspace api={groveApi} meetingId={meetingId} meetingTitle={title} demo={usingMocks} refreshSignal={revision}>
-      <TranscriptPanel api={groveApi} meetingId={meetingId} onSeedsExtracted={reloadGrove}
+      {accountId && <p><a href={`?account=${encodeURIComponent(accountId)}`}>Back to this meeting's client account</a></p>}
+      <TranscriptPanel api={groveApi} meetingId={meetingId} accountId={accountId} onSeedsExtracted={reloadGrove}
         meetingStartedAt={meetingStartedAt} userName={userName} onUserNameChange={setUserName} />
       {userName.trim() && <LeavesPanel key={meetingId + ':' + userName} api={groveApi}
-        meetingId={meetingId} speaker={userName} getStartSec={meetingClock}
+        meetingId={meetingId} accountId={accountId} speaker={userName} getStartSec={meetingClock}
         onSeeds={reloadGrove} mockMode={usingMocks} />}
     </ForestWorkspace>
   );
@@ -33,6 +34,7 @@ function MeetingGrove({ meetingId }: { meetingId: string }) {
 export function App() {
   const parameters = new URLSearchParams(window.location.search);
   // `?accounts` lists client accounts and `?account=ID` opens one; anything else is a meeting grove.
+  // `?meetingId=ID&accountId=ID` links that meeting's seeds to the account when they are extracted.
   if (parameters.has('accounts') || parameters.has('account')) return <AccountsApp api={accountsApi} demo={usingMocks} />;
-  return <MeetingGrove meetingId={parameters.get('meetingId') || DEMO_MEETING_ID} />;
+  return <MeetingGrove meetingId={parameters.get('meetingId') || DEMO_MEETING_ID} accountId={parameters.get('accountId') || null} />;
 }

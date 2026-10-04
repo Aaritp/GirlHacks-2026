@@ -8,12 +8,12 @@ import './leaves.css';
 const INITIAL: LeavesSnapshot = { preview: '', confirmed: false, busy: false,
   composing: false, pending: false, saving: false, message: '', error: '' };
 interface Props {
-  api: GroveApi; meetingId: string; speaker: string; getStartSec: () => number;
+  api: GroveApi; meetingId: string; accountId?: string | null; speaker: string; getStartSec: () => number;
   onSeeds?: (seeds: Seed[]) => void; speech?: SpeechOutput; mockMode?: boolean;
 }
 
 /** Key this panel by meeting/speaker so unfinished drafts cannot move between people. */
-export function LeavesPanel({ api, meetingId, speaker, getStartSec, onSeeds,
+export function LeavesPanel({ api, meetingId, accountId, speaker, getStartSec, onSeeds,
   speech, mockMode = false }: Props) {
   const session = useRef<LeavesSession | null>(null);
   const callbacks = useRef({ getStartSec, onSeeds });
@@ -31,14 +31,14 @@ export function LeavesPanel({ api, meetingId, speaker, getStartSec, onSeeds,
 
   useEffect(() => {
     const current = createLeavesSession({
-      api, meetingId, speaker, speech: speech ?? azureSpeechOutput(api),
+      api, meetingId, accountId, speaker, speech: speech ?? azureSpeechOutput(api),
       getStartSec: () => callbacks.current.getStartSec(), onChange: setState,
       onSeeds: (seeds) => callbacks.current.onSeeds?.(seeds),
     });
     session.current = current;
     setState(current.snapshot());
     return () => { current.dispose(); session.current = null; };
-  }, [api, meetingId, speaker, speech]);
+  }, [api, meetingId, accountId, speaker, speech]);
 
   useEffect(() => {
     let active = true;

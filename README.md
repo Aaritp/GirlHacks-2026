@@ -82,8 +82,9 @@ they are **not AI extraction**. Mock composition joins picked words and never sp
 
 ## Ownership and branches
 
-This Leaves branch merges main at b02fb34, including the account backend,
-account dashboard, online capture, and shared transcript clock. It keeps the shared
+This Leaves branch merges main at 39d1646, including the account backend,
+account dashboard, online capture, shared clock, account-to-meeting links and
+garden overlap fix. It keeps the shared
 forest, API instance, repository, and main's complete TranscriptPanel implementation.
 Person B owns ingestion/Slack; do not merge `feat/input-controls`.
 

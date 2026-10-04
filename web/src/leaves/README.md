@@ -21,6 +21,8 @@ ForestWorkspace and passes the same API instance to transcript and Leaves.
 - The transcript panel's Your name field controls the speaker for both panels.
   Leaves appears only with a nonblank name. Changing it remounts Leaves and clears
   its draft and confirmation. Both panels use the app-owned meeting start time.
+- Account-linked meeting routes pass the existing accountId through Leaves
+  extraction, including when Leaves speaks before the first transcript window.
 
 The shared account backend/dashboard is integrated. Leaves suggestions remain
 scoped to the selected meeting's stored utterances, not account-wide retrieval.

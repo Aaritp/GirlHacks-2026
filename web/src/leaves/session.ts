@@ -22,6 +22,8 @@ export interface LeavesSnapshot {
 
 export function createLeavesSession(options: {
   api: GroveApi; speech: SpeechOutput; meetingId: string; speaker: string;
+  /** Preserve the account link even when Leaves is the meeting's first contribution. */
+  accountId?: string | null;
   getStartSec: () => number; onChange?: (state: LeavesSnapshot) => void;
   onSeeds?: (seeds: Seed[]) => void; newId?: () => string;
 }) {
@@ -56,7 +58,8 @@ export function createLeavesSession(options: {
           await options.api.saveUtterance(entry.utterance);
           entry.saved = true;
         }
-        const grove = await options.api.extract({ meetingId: entry.utterance.meetingId, utterances: [entry.utterance] });
+        const grove = await options.api.extract({ meetingId: entry.utterance.meetingId,
+          accountId: options.accountId, utterances: [entry.utterance] });
         if (!disposed) options.onSeeds?.(grove.seeds);
         pending = undefined;
         state.pending = false;

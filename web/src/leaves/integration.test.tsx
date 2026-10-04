@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { App } from '../App';
 import { startOnlineCapture } from '../transcript/online';
 
-const observed = vi.hoisted(() => ({ save: vi.fn() }));
+const observed = vi.hoisted(() => ({ save: vi.fn(), extract: vi.fn() }));
 vi.mock('../api/mocks', async (importOriginal) => {
   const original = await importOriginal<typeof import('../api/mocks')>();
   return { ...original, createMockApi: (...args: Parameters<typeof original.createMockApi>) => {
@@ -13,6 +13,9 @@ vi.mock('../api/mocks', async (importOriginal) => {
     return { ...api, saveUtterance: (utterance: Parameters<typeof api.saveUtterance>[0]) => {
       observed.save(utterance);
       return api.saveUtterance(utterance);
+    }, extract: (request: Parameters<typeof api.extract>[0]) => {
+      observed.extract(request);
+      return api.extract(request);
     } };
   } };
 });
@@ -115,4 +118,26 @@ it('changing the shared name clears the previous participant draft and confirmat
   expect((screen.getByLabelText('Editable sentence preview') as HTMLTextAreaElement).value).toBe('');
   expect((screen.getByRole('button', { name: 'Speak confirmed preview' }) as HTMLButtonElement).disabled).toBe(true);
   expect(observed.save).not.toHaveBeenCalled();
+});
+
+it('retains the account link when Leaves speaks before the first transcript extraction', async () => {
+  window.history.replaceState({}, '', '/?meetingId=leaves-first-session&accountId=client-account');
+  const user = userEvent.setup();
+  render(<App />);
+  expect(screen.getByRole('link', { name: "Back to this meeting's client account" }).getAttribute('href'))
+    .toBe('?account=client-account');
+  await user.type(screen.getByLabelText('Your name'), 'Ria');
+  await user.type(screen.getByLabelText('Editable sentence preview'), 'I will verify the account checklist.');
+  await user.click(screen.getByRole('button', { name: 'Confirm this exact preview' }));
+  await user.click(screen.getByRole('button', { name: 'Speak confirmed preview' }));
+  await screen.findByText('Spoken contribution saved.');
+  expect(observed.extract).toHaveBeenCalledWith(expect.objectContaining({
+    meetingId: 'leaves-first-session', accountId: 'client-account',
+    utterances: [expect.objectContaining({ speaker: 'Ria', via: 'leaves' })],
+  }));
+  await user.click(screen.getByRole('button', { name: 'Play fixture transcript' }));
+  await waitFor(() => expect(observed.extract).toHaveBeenCalledWith(expect.objectContaining({
+    meetingId: 'leaves-first-session', accountId: 'client-account',
+    utterances: expect.arrayContaining([expect.objectContaining({ via: 'voice' })]),
+  })));
 });

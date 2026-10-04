@@ -4,6 +4,7 @@ import leaves_suggest
 from leaves_suggest import service as suggestion_service
 from conftest import function_handlers
 from extract.model import ModelFailed, ModelNotConfigured
+from extract.pipeline import extract_and_save
 from fake_cosmos import FakeDatabase
 from shared.cosmos import CosmosStore
 from shared.models import Suggestions, Utterance
@@ -54,6 +55,25 @@ def test_confirmed_playback_record_retries_use_existing_utterance_route(reposito
         assert handler(request(record.model_dump(mode="json"))).status_code == 200
     assert repository.list_utterances("meeting-a") == [record]
     assert repository.list_utterances("meeting-b") == []
+
+
+def test_leaves_first_extraction_preserves_account_for_retry_and_later_transcript(repository):
+    record = utterance(text="I will review Quetzal-X9", via="leaves")
+    item = {"key": "review", "kind": "commitment", "text": "Review Quetzal-X9",
+            "owner": "Alex", "deadline": None, "deadlineEvidence": None,
+            "utteranceIds": [record.id], "dependsOn": []}
+    first = extract_and_save(repository, record.meetingId, [record], lambda _: [item],
+                             account_id="client-account")
+    retry = extract_and_save(repository, record.meetingId, [record], lambda _: [item],
+                             account_id="client-account")
+    assert retry.seeds[0].id == first.seeds[0].id
+    assert first.seeds[0].accountId == "client-account"
+    assert first.seeds[0].sourceType == "leaves"
+    assert repository.list_utterances(record.meetingId) == [record]
+    later = utterance("voice-later", text="Thanks, Alex.", start=210)
+    extract_and_save(repository, later.meetingId, [later], lambda _: [], account_id="client-account")
+    assert repository.get_source(record.meetingId, record.meetingId).accountId == "client-account"
+    assert len(repository.list_account_seeds("client-account")) == 1
 
 
 @pytest.mark.parametrize("failure,status", [(ModelNotConfigured("Missing model settings"), 503),

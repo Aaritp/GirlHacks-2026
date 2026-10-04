@@ -9,7 +9,7 @@ Leaves context is still scoped to the selected meeting.
 
 | Time | Action and explanation |
 | --- | --- |
-| 0:00–0:25 | Open /?accounts and show the client's timeline/grove. State whether the data is sample or real. Then open the prepared meeting grove. Do not claim automatic account linkage from this route; prepare/link the meeting through the shared backend for a real account demonstration. |
+| 0:00–0:25 | Open /?accounts and show the client's timeline/grove. State whether the data is sample or real. Choose Start a meeting: the route carries the account ID into both transcript and Leaves extraction. Mock account and meeting stores remain separate, so demonstrate cross-view persistence with the real backend only. |
 | 0:25–1:00 | Enter Your name. In desktop Chrome/Edge, choose Share meeting tab and enable tab audio for the Zoom/Meet/Teams tab. Say “I'll send the payroll integration checklist by October 5.” Stop sharing to flush extraction. If services are unavailable, announce BACKUP A and use Play fixture transcript. |
 | 1:00–1:20 | Inspect the saved commitment, owner, deadline and source timestamp in the forest. Refresh Leaves suggestions: they use persisted recent meeting context. Label fixture suggestions as fixtures. |
 | 1:20–1:50 | Pick suggested words and type/spell Quetzal-X9. Build “I will review Quetzal-X9.” Explain that arbitrary spelling and direct preview editing are always available. |
@@ -24,7 +24,7 @@ Leaves context is still scoped to the selected meeting.
 | 3:00–3:35 | Show client account → meeting/text sources → shared extraction and Cosmos → source-backed seeds and account timeline. Clearly distinguish integrated account/backend/capture work from pending ingestion connections. |
 | 3:35–4:10 | If the team's Slack integration has landed and passed preflight, demonstrate it. Otherwise use a labeled planned-flow diagram; do not present fixture data as live Slack. |
 | 4:10–4:40 | Explain the ADP value: follow-through on client onboarding/payroll commitments, with owners, deadlines and evidence. Leaves lets a participant compose their own contribution without being limited to suggestions. |
-| 4:40–5:00 | Close with remaining integration: meeting-to-account route wiring, ingestion, audio routing into the call, live service validation and user testing. |
+| 4:40–5:00 | Close with remaining integration: ingestion, audio routing into the call, live service validation and user testing. |
 
 Whiteboard OCR and hand/head tracking are dropped.
 

@@ -223,6 +223,14 @@ describe('account dashboard', () => {
     expect(screen.getByRole('button', { name: 'Reopen' })).toBeTruthy();
   });
 
+  it('links a new meeting to the open account', async () => {
+    setup('/?account=acct-harbor');
+    const link = await screen.findByRole('link', { name: 'Start a meeting' });
+    const target = new URLSearchParams(link.getAttribute('href')!);
+    expect(target.get('accountId')).toBe('acct-harbor');
+    expect(target.get('meetingId')).toMatch(/^[0-9a-f-]{36}$/);
+  });
+
   it('marks the Ask the Grove slot and scopes it to the account', async () => {
     window.history.replaceState(null, '', '/?account=acct-harbor');
     render(<AccountsApp api={createMockAccountsApi(createAccountsDemo())} renderAsk={(id) => <p>Ask about {id}</p>} />);
