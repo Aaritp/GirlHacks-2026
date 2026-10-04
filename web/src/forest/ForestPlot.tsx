@@ -7,6 +7,8 @@ import { formatDeadline, growthLabels, growthState } from './health';
 import { PlantSymbol } from './PlantSymbol';
 
 type Position = [number, number];
+// Tall enough for a plant, a three-line caption, and the action pill of the row above.
+const ROW_HEIGHT = 350;
 interface Props {
   seeds: Seed[]; allSeeds: Seed[]; meetingId: string; roots: Root[];
   selectedId: string | null; onSelect: (id: string) => void;
@@ -14,14 +16,18 @@ interface Props {
   onProgress: (seed: Seed, complete: boolean) => void; busy: boolean;
   showRoots: boolean; list: boolean; now: number;
 }
-const constrain = ([x, y]: Position): Position => [Math.max(15, Math.min(85, x)), Math.max(22, Math.min(80, y))];
+// Keeps a plant fully inside the garden: the vertical margin is a fixed pixel distance, whatever the row count.
+const constrain = ([x, y]: Position, rows: number): Position => {
+  const margin = 150 / (rows * ROW_HEIGHT) * 100;
+  return [Math.max(15, Math.min(85, x)), Math.max(margin, Math.min(100 - margin, y))];
+};
 function readLayout(key: string): Record<string, Position> {
   try {
     const parsed: unknown = JSON.parse(localStorage.getItem(key) ?? '{}');
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
     return Object.fromEntries(Object.entries(parsed).filter(([, point]) => Array.isArray(point)
       && point.length === 2 && point.every((n: unknown) => typeof n === 'number' && Number.isFinite(n)))
-      .map(([id, point]) => [id, constrain(point as Position)]));
+      .map(([id, point]) => [id, point as Position]));
   } catch { return {}; }
 }
 
@@ -42,11 +48,13 @@ export function ForestPlot({ seeds, allSeeds, meetingId, roots, selectedId, onSe
     compact?.addEventListener('change', exitArrangement);
     return () => compact?.removeEventListener('change', exitArrangement);
   }, []);
+  // Every row gets the same pixel height, so the garden grows with the grove instead of crowding it.
   const rows = Math.max(2, Math.ceil(allSeeds.length / 3));
+  const gardenHeight = rows * ROW_HEIGHT;
   const x = scalePoint<number>().domain([0, 1, 2]).range([18, 82]);
-  const y = scalePoint<number>().domain(Array.from({ length: rows }, (_, i) => i)).range([26, 74]);
-  const positions = new Map(allSeeds.map((seed, i) => [seed.id, custom[seed.id]
-    ?? [x(i % 3)!, y(Math.floor(i / 3))! + (i % 3 === 1 ? 3 : -1)] as Position]));
+  const y = (row: number, column: number) => ((row + .5) * ROW_HEIGHT + (column === 1 ? 18 : -6)) / gardenHeight * 100;
+  const positions = new Map(allSeeds.map((seed, i) => [seed.id, custom[seed.id] ? constrain(custom[seed.id], rows)
+    : [x(i % 3)!, y(Math.floor(i / 3), i % 3)] as Position]));
   const path = linkVertical<{ source: Position; target: Position }, Position>().x(d => d[0]).y(d => d[1]);
   const saveLayout = (next: Record<string, Position>) => {
     setCustom(next);
@@ -75,7 +83,7 @@ export function ForestPlot({ seeds, allSeeds, meetingId, roots, selectedId, onSe
     </div>
     <span className="sr-only" role="status">{layoutNotice}</span>
     <div className="garden-scroll">
-      <div ref={garden} className={`garden ${arranging ? 'arranging' : ''}`} style={{ minHeight: `${Math.max(610, rows * 305)}px` }} aria-label="Meeting garden">
+      <div ref={garden} className={`garden ${arranging ? 'arranging' : ''}`} style={{ minHeight: `${gardenHeight}px` }} aria-label="Meeting garden">
         <svg className="root-network" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
           {showRoots && roots.map((root) => {
             const source = positions.get(root.fromSeedId), target = positions.get(root.toSeedId);
@@ -107,7 +115,7 @@ export function ForestPlot({ seeds, allSeeds, meetingId, roots, selectedId, onSe
                 const dx = event.clientX - active.x, dy = event.clientY - active.y;
                 if (!active.moved && Math.hypot(dx, dy) < 5) return;
                 active.moved = true; setDragging(seed.id);
-                active.current = constrain([active.start[0] + dx / bounds.width * 100, active.start[1] + dy / bounds.height * 100]);
+                active.current = constrain([active.start[0] + dx / bounds.width * 100, active.start[1] + dy / bounds.height * 100], rows);
                 setCustom(previous => ({ ...previous, [seed.id]: active.current }));
               }}
               onPointerUp={() => {
@@ -124,7 +132,7 @@ export function ForestPlot({ seeds, allSeeds, meetingId, roots, selectedId, onSe
                 if (!arranging || !event.altKey || !deltas[event.key]) return;
                 event.preventDefault();
                 const [dx, dy] = deltas[event.key];
-                saveLayout({ ...custom, [seed.id]: constrain([left + dx, top + dy]) });
+                saveLayout({ ...custom, [seed.id]: constrain([left + dx, top + dy], rows) });
               }}>
               <span className="plant-bed"><PlantSymbol state={state} /></span>
               <span className="plant-caption"><span className="plant-title">{seed.text}</span>
