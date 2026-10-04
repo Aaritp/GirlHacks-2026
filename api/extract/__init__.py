@@ -3,9 +3,9 @@ import logging
 import azure.functions as func
 
 from extract import model
-from extract.pipeline import SourceConflict, extract_and_save, extract_source_and_save
+from extract.pipeline import SourceConflict, extract_and_save
 from shared.http import error_response, json_response, validated
-from shared.models import ExtractRequest, ExtractSourceRequest
+from shared.models import ExtractRequest
 from shared.store import get_store, storage_errors
 
 bp = func.Blueprint()
@@ -34,13 +34,3 @@ def extract(req: func.HttpRequest):
     store = get_store()
     return _run(lambda: extract_and_save(store, request.meetingId, request.utterances, model.call_model,
                                          account_id=request.accountId))
-
-
-@bp.route(route="extract/source", methods=["POST"])
-@validated
-@storage_errors
-def extract_source(req: func.HttpRequest):
-    """Email, chat, document or Slack ingestion: saves the Source, then extracts seeds from its text."""
-    request = ExtractSourceRequest.model_validate(req.get_json())
-    store = get_store()
-    return _run(lambda: extract_source_and_save(store, request.source, model.call_source_model))

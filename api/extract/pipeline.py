@@ -9,7 +9,7 @@ from collections.abc import Callable
 from datetime import date, datetime, timezone
 from typing import get_args
 
-from shared.models import MAX_QUOTE, Grove, Root, Seed, SeedKind, Source, Utterance
+from shared.models import MAX_QUOTE, TEXT_SOURCE_TYPES, Grove, Root, Seed, SeedKind, Source, Utterance
 from shared.store import GroveStore, StorageUnavailable
 
 MAX_TEXT = 500
@@ -129,14 +129,37 @@ def _meeting_account(store: GroveStore, meeting_id: str, account_id: str | None,
     return source.accountId
 
 
+def _text_source_account(store: GroveStore, meeting_id: str, source: Source, account_id: str | None):
+    """Saves (or re-reads) an email/chat/document/Slack Source; returns the account its seeds belong to."""
+    if source.type not in TEXT_SOURCE_TYPES or source.meetingId != meeting_id:
+        raise ValueError("A text source must be an email, chat, document or Slack source in this partition")
+    if account_id is not None and account_id != source.accountId:
+        raise SourceConflict("The source belongs to a different account.")
+    stored = store.create_source(source) or store.get_source(meeting_id, source.id)
+    if stored is None:
+        raise StorageUnavailable("Source conflicted but could not be read back")
+    return stored.accountId
+
+
 def extract_and_save(store: GroveStore, meeting_id: str, utterances: list[Utterance],
                      model: Callable[[dict], list[dict]], now: datetime | None = None,
-                     account_id: str | None = None) -> Grove:
+                     account_id: str | None = None, *, source: Source | None = None) -> Grove:
+    """Extracts seeds from a meeting transcript window, or from a text source.
+
+    For a text `source` (email, chat, document, Slack), `utterances` are utterance-shaped chunks of
+    its text: they are cited as evidence but not saved as utterances, and seeds point at the source
+    with no timestamp. Ingestion (`api/ingest`) owns chunking and the Source record.
+    """
     now = now or datetime.now(timezone.utc)
+    if any(utterance.meetingId != meeting_id for utterance in utterances):
+        raise ValueError("Extraction evidence must belong to this partition")
     # Persist the transcript and its Source first so every seed can be traced back.
-    account = _meeting_account(store, meeting_id, account_id, now)
-    for utterance in utterances:
-        store.save_utterance(utterance)
+    if source is None:
+        account = _meeting_account(store, meeting_id, account_id, now)
+        for utterance in utterances:
+            store.save_utterance(utterance)
+    else:
+        account = _text_source_account(store, meeting_id, source, account_id)
 
     ordered = sorted(utterances, key=lambda item: (item.startSec, item.id))
     window = {
@@ -146,18 +169,25 @@ def extract_and_save(store: GroveStore, meeting_id: str, utterances: list[Uttera
     items = validate_items(model(window), ordered)
 
     known = store.list_seeds(meeting_id)
+    if source is not None:
+        # Several sources can share a partition; deduplicate within this source only.
+        known = [seed for seed in known if seed.sourceId == source.id]
     found: dict[str, Seed] = {}
     keys: dict[str, str] = {}
     for item in items:
         seed = find_duplicate(item, known)
         if seed is None:
             anchor = item["anchor"]
+            identity = (meeting_id, item["kind"], anchor.id, _normalize(item["text"]))
+            if source is not None:
+                identity = (*identity, source.id)
             candidate = Seed(
-                id=f"seed-{_digest(meeting_id, item['kind'], anchor.id, _normalize(item['text']))}",
+                id=f"seed-{_digest(*identity)}",
                 meetingId=meeting_id, text=item["text"], owner=item["owner"], deadline=item["deadline"],
                 kind=item["kind"], status="seed", health=1,
-                sourceType="leaves" if anchor.via == "leaves" else "meeting", sourceId=meeting_id,
-                timestampSec=anchor.startSec, lastActivity=now, size=1,
+                sourceType=source.type if source else ("leaves" if anchor.via == "leaves" else "meeting"),
+                sourceId=source.id if source else meeting_id,
+                timestampSec=None if source else anchor.startSec, lastActivity=now, size=1,
                 accountId=account, quote=item["quote"],
             )
             # Deterministic IDs make a concurrent duplicate create resolve to the same seed.
@@ -184,76 +214,3 @@ def _save_roots(store: GroveStore, meeting_id: str, items: list[dict], keys: dic
             store.create_root(root)
             roots[root.id] = root
     return list(roots.values())
-
-
-def _find_in(text: str, quote) -> bool:
-    return isinstance(quote, str) and bool(quote.strip()) and _normalize(quote) in _normalize(text)
-
-
-def validate_source_items(raw_items: list, source: Source):
-    """Drops items whose quote is not verbatim in the source, and nulls unsupported owners/deadlines."""
-    valid = []
-    body = source.text or ""
-    for raw in raw_items:
-        if not isinstance(raw, dict) or raw.get("kind") not in KINDS:
-            continue
-        text = raw.get("text").strip()[:MAX_TEXT] if isinstance(raw.get("text"), str) else ""
-        quote = raw.get("quote")
-        if not text or not _find_in(body, quote):
-            continue
-        valid.append({
-            "key": str(raw.get("key") or len(valid)),
-            "kind": raw["kind"], "text": text, "quote": re.sub(r"\s+", " ", quote).strip()[:MAX_QUOTE],
-            "owner": _supported_owner(raw.get("owner"), [], [body]),
-            "deadline": _supported_deadline(raw.get("deadline"), raw.get("deadlineEvidence"), [body]),
-            "dependsOn": [key for key in raw.get("dependsOn") or [] if isinstance(key, str)],
-        })
-    return valid
-
-
-def _source_duplicate(item: dict, seeds: list[Seed], source: Source):
-    for seed in seeds:
-        if seed.sourceId != source.id or seed.kind != item["kind"]:
-            continue
-        if (seed.quote and _normalize(seed.quote) == _normalize(item["quote"])) \
-                or similarity(seed.text, item["text"]) >= RESTATEMENT_SIMILARITY:
-            return seed
-    return None
-
-
-def extract_source_and_save(store: GroveStore, source: Source, model: Callable[[dict], list[dict]],
-                            now: datetime | None = None) -> Grove:
-    """Saves an email/chat/document/Slack Source and the seeds extracted from its text.
-    Re-sending the same source returns the same seeds instead of duplicating them."""
-    now = now or datetime.now(timezone.utc)
-    stored = store.create_source(source) or store.get_source(source.meetingId, source.id)
-    if stored is None:
-        raise StorageUnavailable("Source conflicted but could not be read back")
-    if (stored.text, stored.accountId, stored.type) != (source.text, source.accountId, source.type):
-        raise SourceConflict("A source with this id already exists with different content.")
-
-    payload = {"referenceDate": source.createdAt.date().isoformat(), "type": source.type,
-               "title": source.title, "text": source.text}
-    items = validate_source_items(model(payload), source)
-
-    known = store.list_seeds(source.meetingId)
-    found: dict[str, Seed] = {}
-    keys: dict[str, str] = {}
-    # Inactivity is measured from when the source was written, never from the future.
-    activity = min(source.createdAt, now)
-    for item in items:
-        seed = _source_duplicate(item, known, source)
-        if seed is None:
-            candidate = Seed(
-                id=f"seed-{_digest(source.meetingId, source.id, item['kind'], _normalize(item['quote']))}",
-                meetingId=source.meetingId, text=item["text"], owner=item["owner"], deadline=item["deadline"],
-                kind=item["kind"], status="seed", health=1, sourceType=source.type, sourceId=source.id,
-                timestampSec=None, lastActivity=activity, size=1, accountId=source.accountId, quote=item["quote"],
-            )
-            seed = store.create_seed(candidate) or store.get_seed(source.meetingId, candidate.id)
-            if seed is None:
-                raise StorageUnavailable("Seed conflicted but could not be read back")
-            known.append(seed)
-        found.setdefault(seed.id, seed)
-        keys[item["key"]] = seed.id
-    return Grove(seeds=list(found.values()), roots=_save_roots(store, source.meetingId, items, keys))
