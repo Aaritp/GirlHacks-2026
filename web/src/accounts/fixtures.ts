@@ -1,6 +1,5 @@
 import type { AccountsData } from './api';
-import type { Utterance } from '../types';
-import type { AccountSeed, AccountSource, SeedKind, SourceType } from './types';
+import type { Seed, SeedKind, Source, SourceType, Utterance } from '../types';
 
 /**
  * Synthetic sample accounts, labeled as such in the UI. Placeholders until the shared
@@ -15,10 +14,10 @@ export function createAccountsDemo(now = Date.now()): AccountsData {
     return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}`;
   };
   // Meeting sources have no text: their transcript is stored as utterances, not on the source.
-  const source = (accountId: string, id: string, type: SourceType, title: string, daysAgo: number, text: string | null): AccountSource =>
+  const source = (accountId: string, id: string, type: SourceType, title: string, daysAgo: number, text: string | null): Source =>
     ({ id, accountId, meetingId: id, type, title, createdAt: at(-daysAgo), text });
-  const seed = (from: AccountSource, id: string, kind: SeedKind, text: string, quote: string,
-    owner: string | null, deadline: number | null, status: AccountSeed['status'] = 'sprout'): AccountSeed => ({
+  const seed = (from: Source, id: string, kind: SeedKind, text: string, quote: string,
+    owner: string | null, deadline: number | null, status: Seed['status'] = 'sprout'): Seed => ({
     id, accountId: from.accountId, meetingId: from.meetingId, text, owner, kind, status, health: 1,
     deadline: deadline === null ? null : date(deadline), sourceType: from.type, sourceId: from.id,
     timestampSec: null, lastActivity: from.createdAt, size: 1, quote,

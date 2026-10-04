@@ -93,3 +93,68 @@ def test_endpoint_returns_timeline_empty_account_and_errors():
     assert status == 404 and body["error"]["code"] == "NOT_FOUND"
     status, body = call(Repository(fail=True), "a")
     assert status == 503 and body["error"]["code"] == "STORAGE_UNAVAILABLE"
+
+
+# --- Through the registered route and the real shared stores ---
+import pytest
+
+from conftest import function_handlers
+from fake_cosmos import FakeDatabase
+from shared import models
+from shared.cosmos import CosmosStore
+from shared.store import MemoryStore, use_store
+
+
+@pytest.fixture(params=["memory", "cosmos"])
+def backend(request):
+    instance = MemoryStore() if request.param == "memory" else CosmosStore(FakeDatabase())
+    use_store(instance)
+    yield instance
+    use_store(None)
+
+
+def stored_source(id, account, type, day, text=None):
+    return models.Source(id=id, meetingId=id, accountId=account, type=type, title=id, text=text,
+                         createdAt=datetime(2026, 10, day, tzinfo=timezone.utc))
+
+
+def stored_seed(id, account, source_id, kind="commitment", quote=None):
+    return models.Seed(id=id, meetingId=source_id, accountId=account, text=id, owner=None, deadline=None, kind=kind,
+                       status="sprout", health=1, sourceType="email", sourceId=source_id, timestampSec=None,
+                       lastActivity=datetime(2026, 10, 1, tzinfo=timezone.utc), size=1, quote=quote)
+
+
+def test_registered_route_reads_the_shared_store(backend):
+    for id in ("a", "b", "empty"):
+        backend.create_account(models.Account(id=id, name=id))
+    backend.create_source(stored_source("doc", "a", "document", 1, "Statement of work"))
+    backend.create_source(stored_source("mail", "a", "email", 4, "Testers are blocked."))
+    backend.create_source(stored_source("theirs", "b", "slack", 3, "Other client"))
+    backend.create_seed(stored_seed("s1", "a", "mail", "risk", "Testers are blocked."))
+    backend.create_seed(stored_seed("b1", "b", "theirs"))
+    backend.create_seed(models.Seed.model_validate({**stored_seed("old", None, "mail").model_dump(), "accountId": None}))
+    handler = function_handlers()["account_timeline"]
+
+    def get(account_id):
+        response = handler(func.HttpRequest("GET", "http://localhost/api/test", route_params={"id": account_id}, body=b""))
+        return response.status_code, json.loads(response.get_body())
+
+    status, body = get("a")
+    assert status == 200
+    assert [(item["source"]["id"], item["source"]["type"]) for item in body["items"]] == [("mail", "email"), ("doc", "document")]
+    assert body["items"][0]["source"]["text"] == "Testers are blocked."
+    assert [(s["id"], s["kind"], s["quote"]) for s in body["items"][0]["seeds"]] == [("s1", "risk", "Testers are blocked.")]
+    assert body["items"][1]["seeds"] == []
+    assert [item["source"]["id"] for item in get("b")[1]["items"]] == ["theirs"]
+    assert get("empty") == (200, {"accountId": "empty", "items": []})
+    assert get("missing")[0] == 404
+
+
+def test_bookkeeping_records_stored_as_sources_are_left_out():
+    class Binding(Source):
+        recordType: str = "source"
+
+    binding = Binding(id="C123", accountId="a", type="slack", title="Slack channel binding",
+                      createdAt=datetime(2026, 10, 9, tzinfo=timezone.utc), recordType="slack_binding")
+    timeline = build_timeline("a", [*SOURCES, binding], SEEDS)
+    assert [item["source"]["id"] for item in timeline["items"]] == ["slack", "email", "old-doc"]

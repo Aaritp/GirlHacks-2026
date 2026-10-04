@@ -6,7 +6,7 @@ import { AccountsApp } from './AccountsApp';
 import { createMockAccountsApi, type AccountsData } from './api';
 import { createAccountsDemo } from './fixtures';
 import { accountSeeds, displayState, summarize } from './state';
-import type { AccountSeed } from './types';
+import type { Seed } from '../types';
 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
@@ -116,7 +116,7 @@ describe('account dashboard', () => {
 
   it('keeps accounts isolated', async () => {
     const data = createAccountsDemo();
-    const stray: AccountSeed = { ...data.timelines[1].items[0].seeds[0], id: 'stray' };
+    const stray: Seed = { ...data.timelines[1].items[0].seeds[0], id: 'stray' };
     const { api } = setup('/?account=acct-northwind', data);
     await waitFor(() => expect(plants()).toHaveLength(7));
     expect(screen.queryByText(/root-cause summary/)).toBeNull();
@@ -173,7 +173,7 @@ describe('account dashboard', () => {
 
   it('applies the display rule to deadlines and risks', () => {
     const base = createAccountsDemo().timelines[0].items[0].seeds[0];
-    const seed = (patch: Partial<AccountSeed>): AccountSeed => ({ ...base, status: 'sprout', kind: 'commitment', deadline: null, ...patch });
+    const seed = (patch: Partial<Seed>): Seed => ({ ...base, status: 'sprout', kind: 'commitment', deadline: null, ...patch });
     expect(displayState(seed({ deadline: '2026-10-03' }), '2026-10-03')).toBe('growing');
     expect(displayState(seed({ deadline: '2026-10-02' }), '2026-10-03')).toBe('wilting');
     expect(displayState(seed({ deadline: '2026-10-02', status: 'bloom' }), '2026-10-03')).toBe('blooming');

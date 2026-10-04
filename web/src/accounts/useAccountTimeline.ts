@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { AccountsApi } from './api';
-import type { AccountSeed, AccountTimeline } from './types';
+import type { Seed } from '../types';
+import type { AccountsApi, AccountTimeline } from './api';
 
 const message = (reason: unknown) => reason instanceof Error ? reason.message : 'Please try again.';
 
@@ -47,7 +47,7 @@ export function useAccountTimeline(api: AccountsApi, accountId: string, refreshS
 
   useEffect(() => { if (refreshSignal) void refresh(true); }, [refreshSignal, refresh]);
 
-  const setStatus = useCallback(async (seed: AccountSeed, status: 'sprout' | 'bloom') => {
+  const setStatus = useCallback(async (seed: Seed, status: 'sprout' | 'bloom') => {
     if (saving.current) return null;
     saving.current = true;
     const revision = ++version.current;

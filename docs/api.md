@@ -16,6 +16,7 @@ new objects and retain IDs when retrying.
 | GET | `/meetings/{meetingId}/utterances` | — | `{ utterances: Utterance[] }` ordered by `startSec` |
 | GET | `/accounts` | — | `Account[]` sorted by name |
 | POST | `/accounts` | `Account` | Saved `Account` (201); 409 if the id exists |
+| GET | `/accounts/{id}/timeline` | — | `{ accountId, items: [{ source: Source, seeds: Seed[] }] }` newest first |
 | POST | `/seeds` | `Seed` | Saved `Seed` (201) |
 | PATCH | `/seeds/{id}?meetingId=...` | `SeedPatch` | Updated `Seed` |
 | GET | `/meetings/{meetingId}/grove` | — | `{ seeds, roots }` |
@@ -65,8 +66,12 @@ new objects and retain IDs when retrying.
   same seeds; the same id with different text/account/type → 409 `CONFLICT`. Model failure →
   502 with no seeds. Meeting text is never echoed in errors.
 - `GET /meetings/{id}/utterances` returns an empty list for an unknown meeting (not 404).
-- The account timeline (`GET /accounts/{id}/timeline`) lives on `feat/account-dashboard`; register
-  it with `create_timeline_blueprint(get_store)` once that branch and this one are merged.
+- `GET /accounts/{id}/timeline` returns every Source of the account, newest `createdAt` first,
+  each with the seeds extracted from it (`seeds` is empty when there are none). Unknown
+  account → 404 `NOT_FOUND`; an account with no sources → 200 with empty `items`. Records of
+  another account, and bookkeeping records stored as sources (`recordType` other than
+  `source`), are never included. Meeting sources have null `text`; read their transcript
+  with `GET /meetings/{id}/utterances`.
 
 ## Errors
 

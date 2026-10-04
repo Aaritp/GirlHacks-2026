@@ -5,13 +5,12 @@ import {
 } from 'lucide-react';
 import { PlantSymbol } from '../forest/PlantSymbol';
 import { formatDeadline, sourceTime } from '../forest/health';
-import type { Utterance } from '../types';
+import type { Account, Seed, SeedKind, Source, SourceType, Utterance } from '../types';
 import type { AccountsApi } from './api';
 import {
   UNASSIGNED, accountSeeds, displayState, filterSeeds, formatDay, kindLabels, newestFirst, noFilter,
   plantFor, sourceLabels, stateLabels, stateReason, summarize, today, type SeedFilter,
 } from './state';
-import type { Account, AccountSeed, AccountSource, SeedKind, SourceType } from './types';
 import { useAccountTimeline } from './useAccountTimeline';
 
 const sourceIcons: Record<SourceType | 'leaves', LucideIcon> = {
@@ -141,7 +140,7 @@ export function AccountDashboard({ api, accountId, account, demo = false, onBack
 }
 
 function SeedDetail({ seed, source, busy, date, onClose, onShowSource, onStatus }: {
-  seed: AccountSeed; source?: AccountSource; busy: boolean; date: string;
+  seed: Seed; source?: Source; busy: boolean; date: string;
   onClose: () => void; onShowSource: (id: string) => void; onStatus: (status: 'sprout' | 'bloom') => void;
 }) {
   const state = displayState(seed, date);
@@ -182,7 +181,7 @@ function MeetingTranscript({ api, meetingId }: { api: AccountsApi; meetingId: st
 }
 
 function SourceDetail({ api, source, seeds, date, onClose, onSeed }: {
-  api: AccountsApi; source: AccountSource; seeds: AccountSeed[]; date: string; onClose: () => void; onSeed: (id: string) => void;
+  api: AccountsApi; source: Source; seeds: Seed[]; date: string; onClose: () => void; onSeed: (id: string) => void;
 }) {
   return <aside className="account-detail" id="source-detail" tabIndex={-1} aria-label="Source details">
     <div className="panel-heading"><h3>{source.title}</h3><button className="icon-button" onClick={onClose} aria-label="Close source details"><X size={18} /></button></div>

@@ -1,5 +1,6 @@
 import type { GrowthState } from '../forest/health';
-import type { AccountSeed, AccountTimeline, SeedKind, SourceType } from './types';
+import type { Seed, SeedKind, SourceType } from '../types';
+import type { AccountTimeline } from './api';
 
 export type DisplayState = 'growing' | 'blooming' | 'wilting';
 
@@ -9,17 +10,17 @@ export function today(now = new Date()): string {
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
 
-export const isOpen = (seed: AccountSeed) => seed.status !== 'bloom';
-export const isOverdue = (seed: AccountSeed, date = today()) =>
+export const isOpen = (seed: Seed) => seed.status !== 'bloom';
+export const isOverdue = (seed: Seed, date = today()) =>
   isOpen(seed) && seed.deadline !== null && seed.deadline < date;
 
 /** Done blooms. An open seed wilts when overdue or when it is a flagged risk. Otherwise it grows. */
-export function displayState(seed: AccountSeed, date = today()): DisplayState {
+export function displayState(seed: Seed, date = today()): DisplayState {
   if (!isOpen(seed)) return 'blooming';
   return seed.kind === 'risk' || isOverdue(seed, date) ? 'wilting' : 'growing';
 }
 
-export function stateReason(seed: AccountSeed, date = today()): string {
+export function stateReason(seed: Seed, date = today()): string {
   if (!isOpen(seed)) return 'Done';
   if (isOverdue(seed, date)) return `Overdue since ${seed.deadline}`;
   if (seed.kind === 'risk') return 'Flagged risk';
@@ -44,13 +45,13 @@ export const UNASSIGNED = '__unassigned__';
 export interface SeedFilter { kind: SeedKind | 'all'; owner: string }
 export const noFilter: SeedFilter = { kind: 'all', owner: 'all' };
 
-export function filterSeeds(seeds: AccountSeed[], filter: SeedFilter): AccountSeed[] {
+export function filterSeeds(seeds: Seed[], filter: SeedFilter): Seed[] {
   return seeds.filter((seed) => (filter.kind === 'all' || seed.kind === filter.kind)
     && (filter.owner === 'all' || (filter.owner === UNASSIGNED ? seed.owner === null : seed.owner === filter.owner)));
 }
 
 /** Seeds of exactly this account. A seed carrying another accountId is dropped, never shown. */
-export function accountSeeds(timeline: AccountTimeline): AccountSeed[] {
+export function accountSeeds(timeline: AccountTimeline): Seed[] {
   const seen = new Set<string>();
   return timeline.items.flatMap((item) => item.seeds).filter((seed) => {
     if (seed.accountId !== timeline.accountId || seen.has(seed.id)) return false;

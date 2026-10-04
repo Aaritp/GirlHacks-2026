@@ -3,10 +3,11 @@
 Open `/?accounts` for the account list and `/?account=ID` for one account. The meeting
 grove at `/` is unchanged and links here from its sidebar.
 
-Status: built against local sample data. The shared `Account` type, `accountId`, the new
-seed kinds and source types, and `/api/accounts` are not in main yet, so nothing here has
-run against a real service. With `VITE_USE_MOCKS=false` the dashboard calls the real
-routes and shows their error; it never falls back to sample data.
+Status: uses the shared `Account`, `Seed` and `Source` types and the real routes. In
+development it shows sample data unless `VITE_USE_MOCKS=false`; against the real API it
+shows that API's errors and never falls back to sample data. It has passed automated tests
+against the memory store and a fake Cosmos, not yet against a running Functions host or a
+real Cosmos account.
 
 ## What it does
 
@@ -32,55 +33,30 @@ A deadline of today is not overdue. This replaces the seven-day inactivity rule 
 display in this view; stored `health` and a stored `status` of `wilted` are ignored here.
 The meeting grove still uses the old rule (`../forest/health.ts`).
 
-## For Prisha: proposed timeline contract
+## Contract
 
-`GET /api/accounts/{id}/timeline` → 200
+`GET /api/accounts/{id}/timeline` is recorded in `docs/api.md` and served by
+`api/accounts_timeline`. Shared-type decisions this view relies on:
 
-```json
-{
-  "accountId": "acct-1",
-  "items": [
-    { "source": { "id": "", "accountId": "", "meetingId": "", "type": "email",
-                  "title": "", "createdAt": "2026-10-03T13:00:00Z", "text": "" },
-      "seeds": [ { "...Seed": "", "accountId": "", "quote": "" } ] }
-  ]
-}
-```
-
-- `items` holds every source of the account, newest `createdAt` first, including sources
-  with no seeds. Unknown account → 404 `NOT_FOUND`. Storage failure → 503.
-- Not yet recorded in `docs/api.md`; it goes there once the team agrees to the shape.
-
-Prisha's answers (proposals until the team agrees, since they change shared types):
-
-| Question | Answer | Effect here |
-| --- | --- | --- |
-| Quote | `quote: string \| null` on `Seed`; extraction fills it, manual seeds get null. | Matches. |
-| Source text | `text: string \| null` on `Source`; stored for email, Slack and documents, null for meetings. | Sample meetings now have null text. See the gap below. |
-| Contacts | `{ name, role?, email? }`. | Matches. Not displayed yet. |
-| PATCH key | `meetingId` stays the storage key; email and Slack sources use their thread or source ID as `meetingId`. | Matches. Mark done works unchanged. |
-| Risk flag | An open seed of kind `risk` is flagged; resolving it is `bloom`. | Matches. |
-| Counts | One timeline per account is fine for three demo accounts. | Matches. |
-
-She will add `get_account`, `list_account_sources` and `list_account_seeds` to the shared
-store once the account types are agreed. The endpoint in `api/accounts_timeline` is written
-against those three reads and stays unregistered until then.
+- `Seed.quote` and `Seed.accountId` are optional; a missing value is treated as null.
+- `Source.text` holds the body of an email, chat, document or Slack thread. It is null for
+  a meeting, whose transcript is fetched with `api.getUtterances` only when the meeting is
+  opened in the timeline.
+- `meetingId` stays the storage key, so marking done uses the shared `api.updateSeed`.
+- An open seed of kind `risk` is a flagged risk; resolving it is `bloom`.
+- The list fetches one timeline per account to count. Fine for the demo accounts.
 
 Still open:
 
-- **Meeting transcripts.** Agreed: `GET /meetings/{meetingId}/utterances` returns
-  `{ "utterances": Utterance[] }` sorted by `startSec`; an unknown or empty meeting gives
-  an empty list and a storage failure gives 503. The dashboard already calls that route
-  when a meeting is opened in the timeline, and only then. Until the route is in main it
-  returns an error against the real API. When `api.getUtterances` lands in the shared
-  client, switch `getUtterances` in `api.ts` to use it.
-- **Ingestion.** Person B owns email, chat, document and Slack ingestion; the text-based
-  extraction route lives in `api/extract`. Until both exist, a real account's timeline only
-  contains meetings.
+- **Linking a meeting to an account.** `/extract` links a meeting only when it receives
+  `accountId`, and the transcript panel does not know the account yet. Proposed:
+  `/?meetingId=ID&accountId=ID`, with `App.tsx` passing `accountId` to the transcript panel.
+- **Ingestion.** Person B owns email, chat, document and Slack ingestion. Until it is in
+  main, a real account's timeline only contains meetings.
 - **Health timer.** Agreed not to register it for now. The account view does not use the
   seven-day decay; the store methods it needs stay on `feat/health-storage`.
-- **New kinds.** Extraction does not produce `risk` or `customer_need` yet, so real data
-  will show no wilting risks.
+- **Sample accounts.** Mock mode uses `fixtures.ts`. The real API starts with no accounts
+  until some are created with `POST /api/accounts`.
 
 ## For Person D: Ask the Grove
 
@@ -96,11 +72,9 @@ The open account reloads every 15 seconds, when the window regains focus, on Ref
 when `refreshSignal` changes. A seed that another feature patches to `bloom` blooms on the
 next of those. If a background reload fails, the last loaded data stays with a warning.
 
-## When the shared types land
+## Not shown
 
-Delete `types.ts` and import the shared types, replace `fixtures.ts` with the shared demo
-accounts, and fix whatever no longer compiles. Roots are not shown in the account grove
-because the timeline does not carry them.
+Roots are not shown in the account grove because the timeline does not carry them.
 
 ## Needs real-service verification
 

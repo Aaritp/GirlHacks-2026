@@ -4,10 +4,10 @@ import '@fontsource-variable/manrope';
 import '@fontsource/forum/latin-400.css';
 import '../forest/forest.css';
 import './accounts.css';
+import type { Account } from '../types';
 import { AccountDashboard } from './AccountDashboard';
 import type { AccountsApi } from './api';
 import { summarize, type AccountSummary } from './state';
-import type { Account } from './types';
 
 const selectedAccount = () => new URLSearchParams(window.location.search).get('account');
 

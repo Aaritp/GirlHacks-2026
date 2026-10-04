@@ -1,6 +1,9 @@
-import { ApiError } from '../api/contracts';
-import type { Seed, Utterance } from '../types';
-import type { Account, AccountSeed, AccountTimeline } from './types';
+import { ApiError, type GroveApi } from '../api/contracts';
+import type { Account, Seed, Source, Utterance } from '../types';
+
+export interface TimelineItem { source: Source; seeds: Seed[] }
+/** Response of GET /api/accounts/{id}/timeline: every source of the account, newest first. */
+export interface AccountTimeline { accountId: string; items: TimelineItem[] }
 
 /** The dashboard's only door to data. Both implementations fail loudly; neither falls back to the other. */
 export interface AccountsApi {
@@ -9,16 +12,13 @@ export interface AccountsApi {
   /** A meeting's transcript, sorted by startSec. Unknown or empty meeting gives an empty list. */
   getUtterances(meetingId: string): Promise<Utterance[]>;
   /** Completing or reopening counts as progress, so it also refreshes lastActivity. */
-  setSeedStatus(seed: AccountSeed, status: 'sprout' | 'bloom'): Promise<AccountSeed>;
+  setSeedStatus(seed: Seed, status: 'sprout' | 'bloom'): Promise<Seed>;
 }
 
-export function createHttpAccountsApi(baseUrl = '/api', fetcher: typeof fetch = fetch): AccountsApi {
-  async function request<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
-    const response = await fetcher(`${baseUrl.replace(/\/$/, '')}${path}`, {
-      method,
-      headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
-      body: body === undefined ? undefined : JSON.stringify(body),
-    });
+/** Transcripts and seed changes go through the shared client; account reads have no shared method yet. */
+export function createHttpAccountsApi(grove: GroveApi, baseUrl = '/api', fetcher: typeof fetch = fetch): AccountsApi {
+  async function request<T>(path: string): Promise<T> {
+    const response = await fetcher(`${baseUrl.replace(/\/$/, '')}${path}`);
     const payload = await response.json().catch(() => null);
     if (!response.ok) {
       throw new ApiError(response.status, payload?.error?.code ?? 'HTTP_ERROR',
@@ -30,14 +30,9 @@ export function createHttpAccountsApi(baseUrl = '/api', fetcher: typeof fetch = 
   return {
     listAccounts: () => request('/accounts'),
     getTimeline: (accountId) => request(`/accounts/${encodeURIComponent(accountId)}/timeline`),
-    getUtterances: async (meetingId) =>
-      (await request<{ utterances: Utterance[] }>(`/meetings/${encodeURIComponent(meetingId)}/utterances`)).utterances,
-    async setSeedStatus(seed, status) {
-      const saved = await request<Partial<Seed>>(
-        `/seeds/${encodeURIComponent(seed.id)}?meetingId=${encodeURIComponent(seed.meetingId)}`, 'PATCH',
-        { status, lastActivity: new Date().toISOString() });
-      return { ...seed, ...saved } as AccountSeed;
-    },
+    getUtterances: async (meetingId) => (await grove.getUtterances(meetingId)).utterances,
+    setSeedStatus: (seed, status) =>
+      grove.updateSeed(seed.meetingId, seed.id, { status, lastActivity: new Date().toISOString() }),
   };
 }
 
