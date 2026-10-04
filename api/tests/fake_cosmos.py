@@ -4,6 +4,8 @@ Raises the real SDK exceptions and enforces (partition key, id) uniqueness the w
 does. It is not a substitute for testing against a real account.
 """
 import copy
+import json
+import re
 
 from azure.cosmos.exceptions import CosmosHttpResponseError, CosmosResourceExistsError, CosmosResourceNotFoundError
 
@@ -42,20 +44,39 @@ class FakeContainer:
             raise CosmosResourceNotFoundError(status_code=404, message="Not found")
         return copy.deepcopy(self.items[(partition_key, item)])
 
-    def patch_item(self, item, partition_key, patch_operations):
+    def patch_item(self, item, partition_key, patch_operations, filter_predicate=None):
         self._check()
         document = self.read_item(item, partition_key)
+        if filter_predicate and not _matches(document, filter_predicate):
+            raise CosmosHttpResponseError(status_code=412, message="Precondition failed")
         for operation in patch_operations:
             assert operation["op"] == "set"
             document[operation["path"].lstrip("/")] = operation["value"]
         self.items[(partition_key, item)] = document
         return copy.deepcopy(document)
 
-    def query_items(self, query, parameters, partition_key):
+    def query_items(self, query, parameters=None, partition_key=None, enable_cross_partition_query=False,
+                    max_item_count=None):
         self._check()
-        self.queries.append({"query": query, "parameters": parameters, "partition_key": partition_key})
+        self.queries.append({"query": query, "parameters": parameters, "partition_key": partition_key,
+                             "cross_partition": enable_cross_partition_query, "max_item_count": max_item_count})
+        if partition_key is None:
+            # Real Cosmos rejects an unscoped query unless cross-partition is explicitly enabled.
+            assert enable_cross_partition_query and query == "SELECT * FROM c"
+            return iter([copy.deepcopy(doc) for doc in self.items.values()])
         assert parameters == [{"name": "@meetingId", "value": partition_key}]
         return iter([copy.deepcopy(doc) for (pk, _), doc in self.items.items() if pk == partition_key])
+
+
+def _matches(document, predicate):
+    """Evaluates the `FROM c WHERE c.a = <json> AND c.b = <json>` predicates the adapter sends."""
+    assert predicate.startswith("FROM c WHERE ")
+    clauses = predicate.removeprefix("FROM c WHERE ").split(" AND ")
+    for clause in clauses:
+        field, literal = re.fullmatch(r"c\.(\w+) = (.+)", clause).groups()
+        if document.get(field) != json.loads(literal):
+            return False
+    return True
 
 
 class FakeDatabase:

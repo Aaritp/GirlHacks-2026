@@ -227,3 +227,83 @@ def test_invalid_throughput_is_a_configuration_error(clean_env, value):
     cosmos_env(clean_env, AZURE_COSMOS_DATABASE_THROUGHPUT=value)
     with pytest.raises(StorageNotConfigured, match="AZURE_COSMOS_DATABASE_THROUGHPUT"):
         get_store()
+
+
+def test_health_candidates_span_meetings(backend):
+    backend.create_seed(make_seed("meeting-a", "s1"))
+    backend.create_seed(make_seed("meeting-b", "s2"))
+    assert sorted((seed.meetingId, seed.id) for seed in backend.iter_health_candidates()) == [
+        ("meeting-a", "s1"), ("meeting-b", "s2")]
+
+
+def test_health_update_changes_only_health(backend):
+    original = make_seed(health=1, status="sprout")
+    backend.create_seed(original)
+    assert backend.update_health_if_unchanged(original, 0.4) is True
+    stored = backend.get_seed("meeting-a", "seed-1")
+    assert stored == original.model_copy(update={"health": 0.4})
+
+
+@pytest.mark.parametrize("edit", [SeedPatch(status="bloom"), SeedPatch(lastActivity="2026-10-04T09:00:00Z"),
+                                  SeedPatch(health=0.9)])
+def test_health_update_never_overwrites_a_concurrent_edit(backend, edit):
+    original = make_seed()
+    backend.create_seed(original)
+    backend.patch_seed("meeting-a", "seed-1", edit)
+    edited = backend.get_seed("meeting-a", "seed-1")
+    assert backend.update_health_if_unchanged(original, 0.2) is False
+    assert backend.get_seed("meeting-a", "seed-1") == edited
+
+
+def test_health_update_ignores_unrelated_edits_and_deleted_or_foreign_seeds(backend):
+    original = make_seed()
+    backend.create_seed(original)
+    backend.patch_seed("meeting-a", "seed-1", SeedPatch(text="Reworded", owner=None, size=3))
+    assert backend.update_health_if_unchanged(original, 0.5) is True
+    assert backend.get_seed("meeting-a", "seed-1").text == "Reworded"
+    assert backend.update_health_if_unchanged(make_seed("meeting-b"), 0.5) is False
+    assert backend.get_seed("meeting-b", "seed-1") is None
+
+
+def test_health_update_rejects_out_of_range_values(backend):
+    original = make_seed()
+    backend.create_seed(original)
+    with pytest.raises(ValueError):
+        backend.update_health_if_unchanged(original, 1.5)
+
+
+def test_person_c_refresh_health_runs_against_the_real_store(backend):
+    from datetime import datetime, timezone
+    from health_timer.health import refresh_health
+    backend.create_seed(make_seed("meeting-a", "stale", lastActivity="2026-09-26T13:00:00Z"))
+    backend.create_seed(make_seed("meeting-b", "fresh", lastActivity="2026-10-03T13:00:00Z"))
+    backend.create_seed(make_seed("meeting-b", "done", status="bloom", health=1,
+                                  lastActivity="2026-01-01T00:00:00Z"))
+    counts = refresh_health(backend, now=datetime(2026, 10, 3, 13, tzinfo=timezone.utc))
+    assert counts == {"checked": 3, "updated": 1, "conflicts": 0}
+    assert backend.get_seed("meeting-a", "stale").health == 0
+    assert backend.get_seed("meeting-b", "fresh").health == 1
+    assert backend.get_seed("meeting-b", "done").health == 1
+
+
+def test_cosmos_health_scan_is_paged_cross_partition_and_skips_corrupt_documents():
+    database = FakeDatabase()
+    backend = CosmosStore(database)
+    backend.create_seed(make_seed())
+    database.containers["seeds"].items[("meeting-b", "bad")] = {"id": "bad", "meetingId": "meeting-b"}
+    assert [seed.id for seed in backend.iter_health_candidates()] == ["seed-1"]
+    query = database.containers["seeds"].queries[-1]
+    assert query["cross_partition"] is True and query["partition_key"] is None
+    assert query["max_item_count"] == cosmos.HEALTH_PAGE_SIZE
+
+
+def test_cosmos_health_failures_are_storage_unavailable():
+    database = FakeDatabase()
+    backend = CosmosStore(database)
+    original = make_seed()
+    backend.create_seed(original)
+    database.containers["seeds"].fail_with = service_error()
+    with pytest.raises(StorageUnavailable):
+        list(backend.iter_health_candidates())
+    with pytest.raises(StorageUnavailable):
+        backend.update_health_if_unchanged(original, 0.5)

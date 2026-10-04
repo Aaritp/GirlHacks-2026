@@ -5,7 +5,7 @@ only the `GroveStore` methods, so the same code runs against memory or Cosmos.
 See docs/storage.md for the contract other owners can rely on.
 """
 import os
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from functools import wraps
 from threading import RLock
 from typing import Protocol
@@ -38,6 +38,15 @@ class GroveStore(Protocol):
     def create_source(self, source: Source) -> Source | None: ...
     def get_source(self, meeting_id: str, source_id: str) -> Source | None: ...
     def get_grove(self, meeting_id: str) -> Grove: ...
+    # Background jobs only (health timer). The one cross-meeting read: pages lazily.
+    def iter_health_candidates(self) -> Iterator[Seed]: ...
+    # Sets only `health`, and only if status, lastActivity and health still match `original`.
+    # Returns False if the seed changed or was deleted; never overwrites a user edit.
+    def update_health_if_unchanged(self, original: Seed, health: float) -> bool: ...
+
+
+def _health_inputs_match(current: Seed, original: Seed):
+    return (current.status, current.lastActivity, current.health) == (original.status, original.lastActivity, original.health)
 
 
 class MemoryStore:
@@ -115,6 +124,21 @@ class MemoryStore:
     def get_grove(self, meeting_id: str):
         with self.lock:
             return Grove(seeds=self.list_seeds(meeting_id), roots=self.list_roots(meeting_id))
+
+    def iter_health_candidates(self):
+        with self.lock:
+            snapshot = [seed.model_copy(deep=True) for seed in self.seeds.values()]
+        yield from snapshot
+
+    def update_health_if_unchanged(self, original: Seed, health: float):
+        with self.lock:
+            key = (original.meetingId, original.id)
+            current = self.seeds.get(key)
+            if current is None or not _health_inputs_match(current, original):
+                return False
+            # Validates the 0–1 range like a PATCH would.
+            self.seeds[key] = Seed.model_validate({**current.model_dump(), "health": health})
+            return True
 
 
 store = MemoryStore()

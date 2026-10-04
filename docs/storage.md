@@ -50,6 +50,8 @@ copies. Every lookup is scoped by `meetingId`; IDs only need to be unique within
 | `create_source(source)` | `Source \| None` | `None` if it exists. |
 | `get_source(meeting_id, source_id)` | `Source \| None` | |
 | `get_grove(meeting_id)` | `Grove` | Seeds and roots of one meeting. |
+| `iter_health_candidates()` | `Iterator[Seed]` | **Background jobs only.** Every seed across meetings, paged lazily (Cosmos: cross-partition, 100 per page). Malformed documents are skipped with a warning. |
+| `update_health_if_unchanged(original, health)` | `bool` | Sets only `health`, only if `status`, `lastActivity` and `health` still match `original` (Cosmos: atomic conditional patch). `False` on a concurrent edit or deletion; never overwrites a user change. |
 
 Errors: `StorageNotConfigured` and `StorageUnavailable` (both map to 503 via
 `storage_errors`). A stored document that fails model validation raises
@@ -72,8 +74,10 @@ so all four fit under a 1000 RU/s account limit. Set it to `serverless` for a se
 account. Shared throughput cannot be added to an existing database: if `grovekeeper` already
 exists without it, storage returns 503 `STORAGE_NOT_CONFIGURED` asking you to delete it.
 
-Not yet provided: cross-meeting scans (needed by a health timer) and deletes. Ask before
-adding them so both backends and the contract tests in `api/tests/test_store.py` stay in sync.
+`iter_health_candidates` is the only cross-meeting read, for the hourly health timer
+(`api/health_timer`); request handlers must stay meeting-scoped. Deletes and account-scoped
+reads are not provided yet. Ask before adding methods so both backends and the contract tests
+in `api/tests/test_store.py` stay in sync.
 
 ## Testing
 

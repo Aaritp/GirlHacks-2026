@@ -3,12 +3,14 @@
 Containers `seeds`, `roots`, `utterances` and `sources` all use `/meetingId` as the
 partition key, so every point read, write and query is scoped to one meeting.
 """
+import json
+import logging
 import os
 from threading import Lock
 
 from azure.core.exceptions import AzureError
 from azure.cosmos import CosmosClient, PartitionKey
-from azure.cosmos.exceptions import CosmosResourceExistsError, CosmosResourceNotFoundError
+from azure.cosmos.exceptions import CosmosHttpResponseError, CosmosResourceExistsError, CosmosResourceNotFoundError
 from pydantic import ValidationError
 
 from shared.models import Grove, Root, Seed, SeedPatch, Source, Utterance
@@ -16,6 +18,8 @@ from shared.store import StorageNotConfigured, StorageUnavailable
 
 CONTAINERS = ("seeds", "roots", "utterances", "sources")
 PARTITION_KEY_PATH = "/meetingId"
+HEALTH_PAGE_SIZE = 100
+PRECONDITION_FAILED = 412
 
 
 def _clean(document: dict):
@@ -119,6 +123,43 @@ class CosmosStore:
 
     def get_grove(self, meeting_id: str):
         return Grove(seeds=self.list_seeds(meeting_id), roots=self.list_roots(meeting_id))
+
+    def iter_health_candidates(self):
+        # The only cross-partition read: used by the hourly health timer, paged lazily.
+        try:
+            documents = self.containers["seeds"].query_items(
+                query="SELECT * FROM c", enable_cross_partition_query=True, max_item_count=HEALTH_PAGE_SIZE)
+            for document in documents:
+                try:
+                    yield Seed.model_validate(_clean(document))
+                except ValidationError:
+                    # One malformed document must not stop health updates for every other seed.
+                    logging.warning("Skipping stored seed %s that failed validation", document.get("id"))
+        except AzureError as exc:
+            raise StorageUnavailable("Cosmos health scan failed") from exc
+
+    def update_health_if_unchanged(self, original: Seed, health: float):
+        if not 0 <= health <= 1:
+            raise ValueError("health must be between 0 and 1")
+        stored = original.model_dump(mode="json")
+        # Cosmos applies the patch only if these still match, atomically on the server.
+        predicate = (f"FROM c WHERE c.status = {json.dumps(stored['status'])} "
+                     f"AND c.lastActivity = {json.dumps(stored['lastActivity'])} "
+                     f"AND c.health = {json.dumps(stored['health'])}")
+        try:
+            self.containers["seeds"].patch_item(
+                item=original.id, partition_key=original.meetingId,
+                patch_operations=[{"op": "set", "path": "/health", "value": health}],
+                filter_predicate=predicate)
+        except CosmosResourceNotFoundError:
+            return False
+        except CosmosHttpResponseError as exc:
+            if exc.status_code == PRECONDITION_FAILED:
+                return False
+            raise StorageUnavailable("Cosmos health update failed") from exc
+        except AzureError as exc:
+            raise StorageUnavailable("Cosmos health update failed") from exc
+        return True
 
 
 DEFAULT_DATABASE_THROUGHPUT = 1000
