@@ -1,5 +1,5 @@
 :root {
-  font-family: 'Forum', serif;
+  font-family: 'Manrope Variable', system-ui, sans-serif;
   color: #203a30; background: #dcecd6; font-synthesis: none; font-size: 17px;
   --pine: #193e31; --ink: #203a30; --muted: #617167; --line: #dfe6dd;
   --sage: #e8efe3; --citron: #d5e999; --radius: 12px;
@@ -267,7 +267,7 @@ main:focus { outline: none; }
 .plant-quick-actions .inspect-shortcut { display: none; }
 @media (max-width:1100px) { .plant-quick-actions .inspect-shortcut { display: flex; min-width: 36px; justify-content: center; padding-left: 6px; padding-right: 6px; } }
 
-/* Open grove, Forum typography, and brushed dark-green metal. */
+/* Open grove, one typeface, and brushed dark-green metal. */
 :root {
   --pine: #183b32;
   --metal-deep: #142f29;

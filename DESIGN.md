@@ -20,22 +20,22 @@ colors:
   needs-care: "#ae8053"
 typography:
   headline:
-    fontFamily: "Forum, serif"
+    fontFamily: "Manrope Variable, sans-serif"
     fontSize: "clamp(36px, 3.1vw, 48px)"
     fontWeight: 400
     lineHeight: 1.12
     letterSpacing: "-0.025em"
   title:
-    fontFamily: "Forum, serif"
+    fontFamily: "Manrope Variable, sans-serif"
     fontSize: "25px"
     fontWeight: 400
     lineHeight: 1.25
   body:
-    fontFamily: "Forum, serif"
+    fontFamily: "Manrope Variable, sans-serif"
     fontSize: "18px"
     fontWeight: 400
   label:
-    fontFamily: "Forum, serif"
+    fontFamily: "Manrope Variable, sans-serif"
     fontSize: "16px"
     fontWeight: 400
   wordmark:
@@ -131,17 +131,13 @@ keep the not-allowed cursor, and arranging plants keeps grab and grabbing.
 
 ## Typography
 
-Three voices, each with one job. Forum (regular only) sets the display headings: page
-titles, section titles and seed titles in the details panel. Museo sets all smaller text:
-body, labels, controls, captions and data. Manrope Variable is kept for the grovekeeper
-wordmark only.
+One family everywhere: Manrope Variable, the typeface of the grovekeeper wordmark,
+bundled locally. Hierarchy comes from size and weight: page titles at 650, section and
+panel headings at 600, labels and small headings at 600, body and controls at 450. The
+wordmark stays at 750. `font-size-adjust` trims its tall lowercase so text keeps the
+optical size the layout was drawn for.
 
-Museo is a licensed typeface and is not bundled. The stack names it first, so it is used
-wherever it is installed or served (for example through an Adobe Fonts kit); Aleo
-Variable, its closest free relative, is bundled as the fallback. `font-size-adjust` keeps
-the smaller text at the optical size the layout was drawn for.
-
-**The Three Voices Rule.** Forum for headings, Museo for everything smaller, Manrope for the wordmark. Never fake a bold in Forum.
+**The One Voice Rule.** Manrope for everything. Do not add a second family.
 
 ## Layout
 
@@ -175,16 +171,12 @@ itself stays flat and uninterrupted.
 
 ## Shapes
 
-Nothing is boxed. Panels have no outline: they are large-radius (30px) translucent leaf
-surfaces on a feathered shadow. Controls are pills, fields have 16-20px corners and a
+Nothing is boxed and nothing casts a drop shadow. A panel such as Ask the Grove has no
+outline, corner or shadow: its content sits on a blurred wash of pale leaf green that
+dissolves into the forest. Notes inside a panel are plain text, not chips or bars.
+Controls are pills whose only depth is the metal sheen, fields have 22-24px corners and a
 soft focus glow, hover washes on rows and navigation are rounded, quotes sit on a soft
 tint instead of a side stripe, and section rules fade out toward both ends.
-
-
-Actions, navigation, filters, and status tags use pills. White work surfaces and the
-pine rail share the panel radius; the broad garden has larger corners (28px, matching
-the panel radius on mobile). Fields use the tighter field radius. Icon controls are
-circular. Captions have soft corners (16px).
 
 Transparent natural-history specimens replace geometric plant glyphs. Four botanical
 states share a two-by-two PNG atlas; silhouettes and text labels distinguish planted,

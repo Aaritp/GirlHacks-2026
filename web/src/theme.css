@@ -120,20 +120,18 @@ nav[aria-label="Workspaces"] button:hover { color: #203a30; }
 }
 
 /*
- * Type. Forum keeps the display headings and Manrope the wordmark; all smaller text is
- * Museo. Museo is a licensed typeface, so it is not bundled: it is used when installed or
- * served (for example through an Adobe Fonts kit). Aleo, its closest free relative, is the
- * bundled fallback. font-size-adjust keeps its lowercase the same optical size Forum had.
+ * Type. One family everywhere: Manrope, the typeface of the grovekeeper wordmark.
+ * Hierarchy comes from size and weight. font-size-adjust trims its tall lowercase so text
+ * keeps the optical size the layout was drawn for.
  */
-:root { font-family: 'Museo', 'Aleo Variable', 'Forum', serif; font-size-adjust: .47; font-weight: 400; }
-button, input, textarea, select { font-family: inherit; }
-h1, h2, h3, .account-name, .care-note p, .ingest-panel h1, .ingest-panel h2 {
-  font-family: 'Forum', serif; font-size-adjust: none; font-weight: 400;
-}
-.brand { font-family: 'Manrope Variable', sans-serif; font-size-adjust: none; }
-.ingest-panel, .ask-box, .ask-context { font-family: inherit; }
-.ingest-panel label, .ask-box label { font-weight: 500; }
-.ask-eyebrow { font-weight: 500; }
+:root { font-family: 'Manrope Variable', system-ui, sans-serif; font-size-adjust: .5; font-weight: 450; font-synthesis: none; word-spacing: .09em; }
+button, input, textarea, select, .ingest-panel, .ask-box, .ask-context { font-family: inherit; }
+h1, h2, h3, .account-name, .ingest-panel h1, .ingest-panel h2 { font-family: inherit; font-weight: 600; letter-spacing: -.02em; }
+h4, h5, strong, b, .ingest-panel label, .ask-box label { font-weight: 600; }
+.page-heading h1 { font-weight: 650; letter-spacing: -.03em; }
+.care-note p { font-weight: 500; letter-spacing: -.01em; }
+.brand { font-size-adjust: none; }
+.ask-eyebrow { font-weight: 600; }
 code { font-family: inherit; font-size: 1em; }
 
 /*
@@ -141,22 +139,26 @@ code { font-family: inherit; font-size: 1em; }
  * controls are pills, hover washes are rounded, and rules fade out at both ends.
  */
 .ask-box, .ask-context, .ingest-panel section, .ingest-panel article {
-  border: 0; border-radius: 30px;
-  background: linear-gradient(180deg, #f6fbf0e6, #edf6e8cc);
-  box-shadow: 0 1px 0 #ffffffb3 inset, 0 24px 60px -34px #183b3259;
+  position: relative; isolation: isolate; border: 0; border-radius: 0; background: none; box-shadow: none;
 }
-.ask-scope, .ask-demo { border-radius: 999px; padding: .45rem .95rem; }
-.ask-box textarea, .ingest-panel textarea { border-radius: 20px; }
+.ask-box::before, .ask-context::before, .ingest-panel section::before, .ingest-panel article::before {
+  content: ''; position: absolute; inset: 6px; z-index: -1; pointer-events: none;
+  border-radius: 48px; background: #f5fbefd9; filter: blur(18px);
+}
+/* Notes inside a panel are plain text, not chips or bars. */
+.ask-scope, .ask-demo { background: none; padding: 0; border-radius: 0; }
+.ask-demo { margin-top: .35rem; }
+.ask-box textarea, .ingest-panel textarea { border-radius: 24px; }
 .ask-box textarea, .ingest-panel :is(input, select, textarea),
 .workspace-extension section[aria-labelledby="transcript-heading"] :is(input, select, textarea),
 .seed-edit input, .seed-edit textarea, .plant-form input, .plant-form textarea {
-  border: 1px solid #b2cdb499; border-radius: 16px; box-shadow: 0 1px 2px #183b320d inset;
+  border: 1px solid #b2cdb466; border-radius: 22px; box-shadow: none; background: #fbfdf7b3;
   transition: border-color 200ms ease, box-shadow 200ms ease, background-color 200ms ease;
 }
 .ask-box textarea:focus, .ingest-panel :is(input, select, textarea):focus,
 .seed-edit :is(input, textarea):focus, .plant-form :is(input, textarea):focus { border-color: #86a88c; box-shadow: 0 0 0 4px #b9dc8c59; }
 .ask-answer { border-left: 0; border-radius: 22px; background: #fbfdf6cc; }
-.ask-source, .ask-context-card { border: 0; border-radius: 22px; box-shadow: 0 14px 36px -26px #183b324d; }
+.ask-source, .ask-context-card { border: 0; border-radius: 24px; box-shadow: none; background: #fbfdf799; }
 .ask-source blockquote, .ingest-panel blockquote, .account-detail blockquote {
   border: 0; margin-inline: 0; padding: 12px 16px; border-radius: 16px; background: #dcecd699;
 }
@@ -170,10 +172,10 @@ code { font-family: inherit; font-size: 1em; }
 /* Ingestion's buttons join the rest: brushed-metal pills. */
 .ingest-panel button {
   border-radius: 999px; padding-inline: 18px; border: 1px solid #94aa9866;
-  background: var(--metal-surface); box-shadow: inset 0 1px 0 #dce8d64d, 0 5px 12px #142f2912;
+  background: var(--metal-surface); box-shadow: inset 0 1px 0 #dce8d64d;
   transition: box-shadow 180ms ease, transform 180ms cubic-bezier(.16,1,.3,1);
 }
-.ingest-panel button:hover:not(:disabled) { box-shadow: inset 0 1px 0 #e4eed48c, 0 6px 16px #142f2926; }
+.ingest-panel button:hover:not(:disabled) { box-shadow: inset 0 1px 0 #e4eed48c; filter: brightness(1.08); }
 .ingest-panel button:active:not(:disabled) { transform: translateY(1px); }
 
 /* Sidebar and row hovers are rounded washes, not rectangles. */
@@ -200,3 +202,8 @@ nav[aria-label="Workspaces"] section[aria-labelledby="clear-all-heading"] { bord
 nav[aria-label="Workspaces"] section[aria-labelledby="clear-all-heading"] button {
   border: 1px solid #c0392b66; border-bottom: 1px solid #c0392b66; border-radius: 999px; padding: 6px 14px; margin: 6px 0 0; min-height: 40px; color: #8a2a1f; font-size: 16px;
 }
+
+/* No drop shadows on controls either: depth comes from the metal sheen alone. */
+.button.primary, .plant-quick-actions { box-shadow: inset 0 1px 0 #dce8d64d; }
+.button.primary:hover:not(:disabled) { box-shadow: inset 0 1px 0 #e4eed48c; filter: brightness(1.08); }
+.sidebar { box-shadow: inset 0 1px 0 #e0ead84d, inset 1px 0 0 #dce8d617; }

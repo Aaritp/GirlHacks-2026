@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Building2, ChevronRight, Sprout, Trees } from 'lucide-react';
 import '@fontsource-variable/manrope';
-import '@fontsource/forum/latin-400.css';
 import '../forest/forest.css';
 import './accounts.css';
 import type { Account } from '../types';

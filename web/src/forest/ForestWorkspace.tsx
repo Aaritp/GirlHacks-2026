@@ -9,7 +9,6 @@ import { SeedInspector } from './SeedInspector';
 import { growthLabels, growthState, type GrowthState } from './health';
 import { useGrove } from './useGrove';
 import '@fontsource-variable/manrope';
-import '@fontsource/forum/latin-400.css';
 import './forest.css';
 
 type Filter = 'all' | GrowthState;
