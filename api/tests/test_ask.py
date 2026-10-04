@@ -182,3 +182,36 @@ def test_route_validation_configuration_and_failures(store, monkeypatch):
     monkeypatch.setattr(service, "complete_json", broken)
     failed = call({"question": "Hi"})
     assert (failed.status_code, json.loads(failed.get_body())["error"]["code"]) == (502, "UPSTREAM_ERROR")
+
+
+def test_answer_text_never_shows_evidence_ids():
+    assert service._strip_refs("Fabrikam wants payroll integration — see E1, E4 and E7.") == \
+        "Fabrikam wants payroll integration."
+    assert service._strip_refs("Priya owns pricing (E2) and the review [E3, E5].") == "Priya owns pricing and the review."
+    assert service._strip_refs("Keep E2E tests and Section 5.") == "Keep E2E tests and Section 5."
+
+
+def test_one_chip_per_source_preferring_the_seed_quote_and_no_email_headers(store):
+    store.create_source(source("c-thread", "acct-contoso", "email", "Thread", "09-20",
+                               "From: Maria Lopez <maria@contoso.example>\nTo: Alex\nDate: Sat, 20 Sep 2026\n\nHi Alex, payroll first please."))
+    store.create_seed(seed("s-thread", store.get_source("account-acct-contoso", "c-thread"), "customer_need",
+                           "Payroll first", "From: Maria Lopez <maria@contoso.example>\nHi Alex, payroll first please."))
+    fake = FakeModel(plan(accountIds=["acct-contoso"], keywords=["payroll"]))  # cites every evidence item
+    result = ask(store, "What does Contoso want about payroll?", fake)
+    keys = [(c.sourceId, c.timestampSec) for c in result.citations]
+    assert len(keys) == len(set(keys))
+    thread = [c for c in result.citations if c.sourceId == "c-thread"]
+    assert len(thread) == 1 and thread[0].seedId == "s-thread"
+    assert "From:" not in thread[0].quote and thread[0].quote == "Hi Alex, payroll first please."
+    excerpt = next(e for e in fake.evidence if e.get("title") == "Thread")
+    assert not excerpt["excerpt"].startswith("From:")
+
+
+def test_overdue_open_commitments_are_marked_for_the_answer(store):
+    fake = FakeModel(plan(accountIds=["acct-fabrikam"], kinds=["commitment"], status="open"),
+                     answer="Priya's pricing (E1) is overdue.")
+    result = ask(store, "What are the open commitments for Fabrikam?", fake)
+    pricing = next(e for e in fake.evidence if e.get("text") == "Send payroll add-on pricing")
+    assert pricing["overdue"] is True  # due 2026-10-02, asked on 2026-10-04
+    assert result.answer == "Priya's pricing is overdue."
+    assert "overdue" in service.ANSWER_PROMPT and "never write refs" in service.ANSWER_PROMPT
