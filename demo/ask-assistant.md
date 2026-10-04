@@ -16,8 +16,10 @@ component and embedding example are in `web/src/ask/README.md`.
 5. With `VITE_USE_MOCKS=false` and configured Speech/Ask services, hold the voice
    button (or Space while focused), say a question, and release. Check the editable
    question before choosing Ask. Verify that this recognizer itself does not create
-   an utterance or seed. The ongoing meeting microphone is independent and may
-   still hear the question; typed questions avoid that.
+   an utterance or seed. Grovekeeper mutes its meeting microphone capture during
+   the question, then restores it. Other participants' tab audio continues. This
+   does not mute your microphone in Zoom/Meet/Teams; mute there or type if the
+   question should not be heard by other people.
 6. Try release-before-permission, permission denial, Escape, and switching views
    while recording. The question microphone must stop, with no automatic submission.
 

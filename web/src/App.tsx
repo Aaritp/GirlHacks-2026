@@ -28,6 +28,7 @@ function MeetingGrove({ meetingId: initialMeetingId, accountId }: { meetingId: s
   const meetingClock = useCallback(() => (Date.now() - meetingStartedAt) / 1000, [meetingStartedAt]);
   const [revision, setRevision] = useState(0);
   const [utterances, setUtterances] = useState<Utterance[]>([]);
+  const [questionActive, setQuestionActive] = useState(false);
   const [leavesUtterances, setLeavesUtterances] = useState<Utterance[]>([]);
   const onLeavesStarted = useCallback((utterance: Utterance) => {
     setLeavesUtterances((current) => [...current.filter((line) => line.id !== utterance.id), utterance].slice(-200));
@@ -48,9 +49,10 @@ function MeetingGrove({ meetingId: initialMeetingId, accountId }: { meetingId: s
             {accountId && <p><a href={`?account=${encodeURIComponent(accountId)}`}>Back to this meeting's client account</a></p>}
             <TranscriptPanel api={groveApi} meetingId={meetingId} accountId={accountId} onSeedsExtracted={reloadGrove}
               meetingStartedAt={meetingStartedAt} userName={userName} onUserNameChange={setUserName}
-              onUtterancesChange={setUtterances} />
+              onUtterancesChange={setUtterances} questionActive={questionActive} />
             <MeetingAssistant key={meetingId} api={groveApi} accountsApi={accountsApi}
-              meetingId={meetingId} accountId={accountId} utterances={[...utterances, ...leavesUtterances]} mockMode={usingMocks} />
+              meetingId={meetingId} accountId={accountId} utterances={[...utterances, ...leavesUtterances]} mockMode={usingMocks}
+              onVoiceActiveChange={setQuestionActive} />
             {userName.trim() && <LeavesPanel key={meetingId + ':' + userName} api={groveApi}
               meetingId={meetingId} accountId={accountId} speaker={userName} getStartSec={meetingClock}
               onSeeds={reloadGrove} mockMode={usingMocks} onUtteranceStarted={onLeavesStarted} />}

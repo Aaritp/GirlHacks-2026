@@ -62,6 +62,7 @@ export function PushToTalk({ api, disabled = false, onText, onListeningChange,
   }
   useEffect(() => () => {
     attempt.current?.abort(); attempt.current = null; recording.current?.cancel(); clearTimeout(timer.current);
+    callbacks.current.onListeningChange?.(false);
   }, []);
   useEffect(() => {
     const blur = () => cancel();

@@ -62,9 +62,12 @@ Releasing before startup cancels even if microphone permission/token arrival is 
 `questionSpeech.ts` creates a separate Azure SpeechRecognizer and microphone stream
 using the existing short-lived Speech token endpoint. No key is sent to the client.
 The recognizer never calls utterance-save, extraction or speech-synthesis methods.
-Recording resources are released on success, failure and cancellation. This does
-not mute the online meeting's own microphone: spoken questions may still be heard
-or captured by an ongoing call. Type a question if it should stay off that audio.
+Recording resources are released on success, failure and cancellation. The meeting
+microphone capture track is muted during question preparation, recording and
+finalization; its recognizer receives silence with unchanged sample counts,
+preserving timestamps. Other participants' tab audio continues. This mutes
+Grovekeeper's transcript capture only, not the microphone in Zoom/Meet/Teams itself.
+Questions can still be heard by people in the call unless that app is also muted.
 
 Mock mode clearly labels keyword answers and disables voice recognition, since the
 shared mock token endpoint intentionally refuses Speech. Tests inject an isolated
@@ -87,3 +90,8 @@ source text/timestamp navigation, API errors, account aliases and dismissal,
 push-to-talk release/cancellation and late permission, SDK resource cleanup, and
 the real App's transcript/Leaves context wiring. See `demo/ask-assistant.md` for
 the manual demo/preflight path.
+
+Pre-push checks: 155 frontend tests and 210 backend tests pass; `npm run typecheck`
+and `npm run build` pass. Backend tests used Python 3.11.9 (3.12 is the documented
+deployment target); Node was 24.21.0. Live Azure/microphone verification remains
+part of preflight. Browser automation was unavailable in this workspace.

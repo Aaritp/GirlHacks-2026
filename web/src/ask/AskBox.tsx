@@ -16,6 +16,7 @@ export interface AskBoxProps {
   mockMode?: boolean; voiceEnabled?: boolean;
   /** Optional host source opener. Without one, citations open an inline source reader. */
   onOpenCitation?: (citation: Citation) => void;
+  onVoiceActiveChange?: (active: boolean) => void;
 }
 
 export function AskBox(props: AskBoxProps) {
@@ -24,7 +25,7 @@ export function AskBox(props: AskBoxProps) {
 }
 
 function ScopedAskBox({ api = defaultApi, accountsApi = defaultAccountsApi, accountId, meetingId,
-  recentUtterances = [], mockMode = usingMocks, voiceEnabled = false, onOpenCitation }: AskBoxProps) {
+  recentUtterances = [], mockMode = usingMocks, voiceEnabled = false, onOpenCitation, onVoiceActiveChange }: AskBoxProps) {
   const id = useId();
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState<AskResponse>();
@@ -64,7 +65,7 @@ function ScopedAskBox({ api = defaultApi, accountsApi = defaultAccountsApi, acco
       <div className="ask-actions"><button className="button primary" type="submit" disabled={!question.trim() || pending || listening}>
         {pending ? 'Asking…' : 'Ask'}</button>
         {voiceEnabled && <PushToTalk api={api} disabled={pending || mockMode}
-          onListeningChange={setListening} onText={edit} />}
+          onListeningChange={(active) => { setListening(active); onVoiceActiveChange?.(active); }} onText={edit} />}
       </div>
     </form>
     {pending && <p role="status">Looking through the grove…</p>}
