@@ -10,6 +10,8 @@ import { TranscriptPanel } from './transcript/TranscriptPanel';
 import { IngestPanel } from './ingest/IngestPanel';
 import { createIngestApi } from './ingest/api';
 import { createMockIngestApi } from './ingest/mocks';
+import { AskBox, MeetingAssistant } from './ask';
+import type { Utterance } from './types';
 
 // One API instance for every feature, so extracted seeds land in the grove the forest shows.
 const groveApi = usingMocks ? createMockApi(createForestDemo()) : api;
@@ -25,6 +27,12 @@ function MeetingGrove({ meetingId: initialMeetingId, accountId }: { meetingId: s
   const [userName, setUserName] = useState('');
   const meetingClock = useCallback(() => (Date.now() - meetingStartedAt) / 1000, [meetingStartedAt]);
   const [revision, setRevision] = useState(0);
+  const [utterances, setUtterances] = useState<Utterance[]>([]);
+  const [questionActive, setQuestionActive] = useState(false);
+  const [leavesUtterances, setLeavesUtterances] = useState<Utterance[]>([]);
+  const onLeavesStarted = useCallback((utterance: Utterance) => {
+    setLeavesUtterances((current) => [...current.filter((line) => line.id !== utterance.id), utterance].slice(-200));
+  }, []);
   const reloadGrove = useCallback(() => setRevision((value) => value + 1), []);
 
   return (
@@ -40,10 +48,14 @@ function MeetingGrove({ meetingId: initialMeetingId, accountId }: { meetingId: s
           : <>
             {accountId && <p><a href={`?account=${encodeURIComponent(accountId)}`}>Back to this meeting's client account</a></p>}
             <TranscriptPanel api={groveApi} meetingId={meetingId} accountId={accountId} onSeedsExtracted={reloadGrove}
-              meetingStartedAt={meetingStartedAt} userName={userName} onUserNameChange={setUserName} />
+              meetingStartedAt={meetingStartedAt} userName={userName} onUserNameChange={setUserName}
+              onUtterancesChange={setUtterances} questionActive={questionActive} />
+            <MeetingAssistant key={meetingId} api={groveApi} accountsApi={accountsApi}
+              meetingId={meetingId} accountId={accountId} utterances={[...utterances, ...leavesUtterances]} mockMode={usingMocks}
+              onVoiceActiveChange={setQuestionActive} />
             {userName.trim() && <LeavesPanel key={meetingId + ':' + userName} api={groveApi}
               meetingId={meetingId} accountId={accountId} speaker={userName} getStartSec={meetingClock}
-              onSeeds={reloadGrove} mockMode={usingMocks} />}
+              onSeeds={reloadGrove} mockMode={usingMocks} onUtteranceStarted={onLeavesStarted} />}
           </>}
       </ForestWorkspace>}
     </>
@@ -54,6 +66,10 @@ export function App() {
   const parameters = new URLSearchParams(window.location.search);
   // `?accounts` lists client accounts and `?account=ID` opens one; anything else is a meeting grove.
   // `?meetingId=ID&accountId=ID` links that meeting's seeds to the account when they are extracted.
-  if (parameters.has('accounts') || parameters.has('account')) return <AccountsApp api={accountsApi} demo={usingMocks} />;
+  if (parameters.has('accounts') || parameters.has('account')) {
+    // Ask the Grove on an account page answers from that account only.
+    return <AccountsApp api={accountsApi} demo={usingMocks} renderAsk={(accountId) =>
+      <AskBox api={groveApi} accountsApi={accountsApi} accountId={accountId} mockMode={usingMocks} />} />;
+  }
   return <MeetingGrove meetingId={parameters.get('meetingId') || DEMO_MEETING_ID} accountId={parameters.get('accountId') || null} />;
 }

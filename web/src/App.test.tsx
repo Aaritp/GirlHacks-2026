@@ -4,6 +4,7 @@ import { afterEach, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
 
 vi.mock('./accounts', () => ({ accountsApi: {}, AccountsApp: () => <div>Account dashboard</div> }));
+vi.mock('./ask', () => ({ MeetingAssistant: () => <div>Meeting assistant</div> }));
 vi.mock('./forest/ForestWorkspace', () => ({ ForestWorkspace: ({ meetingId, children }: { meetingId: string; children: ReactNode }) =>
   <div><span data-testid="partition">{meetingId}</span>{children}</div> }));
 vi.mock('./transcript/TranscriptPanel', () => ({ TranscriptPanel: ({ meetingId, accountId }: { meetingId: string; accountId: string | null }) =>

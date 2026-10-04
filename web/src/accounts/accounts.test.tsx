@@ -223,6 +223,26 @@ describe('account dashboard', () => {
     expect(screen.getByRole('button', { name: 'Reopen' })).toBeTruthy();
   });
 
+  it('shows where a commitment was completed, and clears it on reopening', async () => {
+    const { api } = setup('/?account=acct-northwind');
+    fireEvent.click(await screen.findByRole('button', { name: /Send the integration checklist/ }));
+    const evidence = within(screen.getByRole('region', { name: 'Completion evidence' }));
+    expect(evidence.getByText('Checklist went out yesterday.').tagName).toBe('BLOCKQUOTE');
+    expect(evidence.getByText(/#northwind-rollout/)).toBeTruthy();
+    fireEvent.click(evidence.getByRole('button', { name: 'Read where it was completed' }));
+    expect(within(screen.getByRole('complementary', { name: 'Source details' })).getByText(/Checklist went out yesterday/)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reopen' }));
+    await waitFor(() => expect(stateOf('nw-checklist')).not.toBe('blooming'));
+    expect(screen.queryByRole('region', { name: 'Completion evidence' })).toBeNull();
+    const stored = (await api.getTimeline('acct-northwind')).items.flatMap((item) => item.seeds).find((seed) => seed.id === 'nw-checklist')!;
+    expect(stored.completedBy).toBeNull();
+    // Marking done by hand records no evidence, so none is claimed.
+    fireEvent.click(screen.getByRole('button', { name: 'Mark done' }));
+    await waitFor(() => expect(stateOf('nw-checklist')).toBe('blooming'));
+    expect(screen.queryByRole('region', { name: 'Completion evidence' })).toBeNull();
+  });
+
   it('links a new meeting to the open account', async () => {
     setup('/?account=acct-harbor');
     const link = await screen.findByRole('link', { name: 'Start a meeting' });
@@ -234,8 +254,9 @@ describe('account dashboard', () => {
   it('marks the Ask the Grove slot and scopes it to the account', async () => {
     window.history.replaceState(null, '', '/?account=acct-harbor');
     render(<AccountsApp api={createMockAccountsApi(createAccountsDemo())} renderAsk={(id) => <p>Ask about {id}</p>} />);
-    const slot = await screen.findByRole('region', { name: 'Ask the Grove' });
+    const mounted = await screen.findByText('Ask about acct-harbor');
+    const slot = mounted.closest<HTMLElement>('.ask-slot')!;
     expect(slot.dataset.accountId).toBe('acct-harbor');
-    expect(within(slot).getByText('Ask about acct-harbor')).toBeTruthy();
+    expect(screen.queryByText(/not connected yet/)).toBeNull();
   });
 });

@@ -11,7 +11,7 @@ export interface AccountsApi {
   getTimeline(accountId: string): Promise<AccountTimeline>;
   /** A meeting's transcript, sorted by startSec. Unknown or empty meeting gives an empty list. */
   getUtterances(meetingId: string): Promise<Utterance[]>;
-  /** Completing or reopening counts as progress, so it also refreshes lastActivity. */
+  /** Completing or reopening counts as progress, so it also refreshes lastActivity. Reopening clears completedBy. */
   setSeedStatus(seed: Seed, status: 'sprout' | 'bloom'): Promise<Seed>;
 }
 
@@ -32,7 +32,9 @@ export function createHttpAccountsApi(grove: GroveApi, baseUrl = '/api', fetcher
     getTimeline: (accountId) => request(`/accounts/${encodeURIComponent(accountId)}/timeline`),
     getUtterances: async (meetingId) => (await grove.getUtterances(meetingId)).utterances,
     setSeedStatus: (seed, status) =>
-      grove.updateSeed(seed.meetingId, seed.id, { status, lastActivity: new Date().toISOString() }),
+      grove.updateSeed(seed.meetingId, seed.id, {
+        status, lastActivity: new Date().toISOString(), ...(status === 'sprout' ? { completedBy: null } : {}),
+      }),
   };
 }
 
@@ -62,7 +64,7 @@ export function createMockAccountsApi(initial: AccountsData): AccountsApi {
       const stored = data.timelines.flatMap((entry) => entry.items).flatMap((item) => item.seeds)
         .find((item) => item.id === seed.id && item.accountId === seed.accountId);
       if (!stored) throw new ApiError(404, 'NOT_FOUND', 'Seed not found.');
-      Object.assign(stored, { status, lastActivity: new Date().toISOString() });
+      Object.assign(stored, { status, lastActivity: new Date().toISOString() }, status === 'sprout' ? { completedBy: null } : {});
       return structuredClone(stored);
     },
   };

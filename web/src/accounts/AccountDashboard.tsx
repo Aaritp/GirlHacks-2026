@@ -73,10 +73,11 @@ export function AccountDashboard({ api, accountId, account, demo = false, onBack
     {error && <div className="error-banner" role="alert"><span>{error}{timeline ? ' Showing the last loaded data.' : ''}</span>
       <button onClick={() => { void refresh(); }} disabled={busy}>Retry loading</button></div>}
 
-    <section className="ask-slot" aria-label="Ask the Grove" data-account-id={accountId}>
-      {renderAsk ? renderAsk(accountId)
-        : <p><strong>Ask the Grove</strong> will appear here, answering questions about {account?.name ?? 'this account'} only. It is not connected yet.</p>}
-    </section>
+    {/* The mounted Ask box labels itself, so the wrapper only names the region while it is empty. */}
+    {renderAsk ? <div className="ask-slot filled" data-account-id={accountId}>{renderAsk(accountId)}</div>
+      : <section className="ask-slot" aria-label="Ask the Grove" data-account-id={accountId}>
+        <p><strong>Ask the Grove</strong> will appear here, answering questions about {account?.name ?? 'this account'} only. It is not connected yet.</p>
+      </section>}
 
     {loading && !timeline ? <div className="grove-loading" role="status"><Sprout size={38} /><p>Opening this account…</p></div>
       : !timeline ? null : <>
@@ -117,7 +118,8 @@ export function AccountDashboard({ api, accountId, account, demo = false, onBack
                       <span className="plant-meta">{kindLabels[seed.kind]}<span className="meta-dot" /><span className={`state-tag ${state}`}>{stateLabels[state]}</span></span>
                     </button></li>;
                   })}</ul>}
-            {selected && <SeedDetail seed={selected} source={sources.get(selected.sourceId)} busy={busy} date={date}
+            {selected && <SeedDetail seed={selected} source={sources.get(selected.sourceId)}
+              completedSource={selected.completedBy ? sources.get(selected.completedBy.sourceId) : undefined} busy={busy} date={date}
               onClose={() => setSeedId(null)} onShowSource={showSource} onStatus={(status) => { void setStatus(selected, status); }} />}
           </div>
         </section>
@@ -142,8 +144,8 @@ export function AccountDashboard({ api, accountId, account, demo = false, onBack
   </div>;
 }
 
-function SeedDetail({ seed, source, busy, date, onClose, onShowSource, onStatus }: {
-  seed: Seed; source?: Source; busy: boolean; date: string;
+function SeedDetail({ seed, source, completedSource, busy, date, onClose, onShowSource, onStatus }: {
+  seed: Seed; source?: Source; completedSource?: Source; busy: boolean; date: string;
   onClose: () => void; onShowSource: (id: string) => void; onStatus: (status: 'sprout' | 'bloom') => void;
 }) {
   const state = displayState(seed, date);
@@ -157,6 +159,15 @@ function SeedDetail({ seed, source, busy, date, onClose, onShowSource, onStatus 
     {seed.quote ? <blockquote>{seed.quote}</blockquote> : <p className="detail-muted">No quote was recorded for this seed.</p>}
     <p className="detail-source"><SourceIcon type={seed.sourceType} size={16} />{source ? `${source.title} · ${formatDay(source.createdAt)}` : `${sourceLabels[seed.sourceType]} · source ${seed.sourceId}`}</p>
     {source && <button className="text-button" onClick={() => onShowSource(source.id)}>Read the full source</button>}
+    {done && seed.completedBy && <section aria-label="Completion evidence">
+      <h5>Completed in</h5>
+      <blockquote>{seed.completedBy.quote}</blockquote>
+      <p className="detail-source"><SourceIcon type={seed.completedBy.sourceType} size={16} />
+        {completedSource ? `${completedSource.title} · ${formatDay(completedSource.createdAt)}` : sourceLabels[seed.completedBy.sourceType] ?? 'Source'}
+        {seed.completedBy.timestampSec != null && ` · at ${sourceTime(seed.completedBy.timestampSec)}`}</p>
+      {completedSource && completedSource.id !== source?.id
+        && <button className="text-button" onClick={() => onShowSource(completedSource.id)}>Read where it was completed</button>}
+    </section>}
     <button className={`button full-width ${done ? 'secondary' : 'primary'}`} disabled={busy} onClick={() => onStatus(done ? 'sprout' : 'bloom')}>
       {done ? <Sprout size={17} /> : <Check size={17} />}{done ? 'Reopen' : 'Mark done'}</button>
   </aside>;

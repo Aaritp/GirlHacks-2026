@@ -18,8 +18,9 @@ real Cosmos account.
 - **Account grove**: forest and plain list of the same seeds, with kind and owner filters.
 - **Seed details**: owner, deadline, the quote it came from, and its source. Mark done or
   reopen. The plant changes only after the save succeeds.
-- **Ask the Grove slot**: a marked region scoped to the open account. Empty until Person D's
-  component exists.
+  A seed closed by a self-updating commitment also shows "Completed in": the source and
+  the quote that showed it was finished. Reopening clears that evidence.
+- **Ask the Grove**: Person D's Ask box, scoped to the open account.
 
 ## Display states
 
@@ -58,15 +59,14 @@ Still open:
 - **Health timer.** Agreed not to register it for now. The account view does not use the
   seven-day decay; the store methods it needs stay on `feat/health-storage`.
 - **Sample accounts.** Mock mode uses `fixtures.ts`. For the real API, run
-  `scripts/seed_demo_accounts.py` to create the three demo accounts in storage.
+  `scripts/seed_demo_data.py` with the API running. It creates Contoso, Fabrikam and
+  Northwind and ingests emails, a chat and a document for each.
 
-## For Person D: Ask the Grove
+## Ask the Grove
 
-Pass your component through `renderAsk` on `AccountsApp` in `App.tsx`:
-
-```tsx
-<AccountsApp api={accountsApi} demo={usingMocks} renderAsk={(accountId) => <AskTheGrove accountId={accountId} />} />
-```
+`App.tsx` mounts Person D's `AskBox` in the slot through `renderAsk`, passing the open
+account's ID so answers come from that account only. Without `renderAsk` the slot shows a
+"not connected" note.
 
 ## Live updates
 

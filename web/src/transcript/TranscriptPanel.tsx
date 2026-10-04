@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import type { GroveApi } from '../api/contracts';
 import { demoUtterances } from '../api/fixtures';
-import type { Seed } from '../types';
+import type { Seed, Utterance } from '../types';
 import { browserEnvironment, checkTabCaptureSupport, type AudioChannel } from './capture';
 import { startOnlineCapture, type OnlineCapture, type SessionEndReason } from './online';
 import {
@@ -23,6 +23,10 @@ interface Props {
   onUserNameChange?: (name: string) => void;
   /** Called after extraction saves seeds so the forest can reload the grove. */
   onSeedsExtracted?: (seeds: Seed[]) => void;
+  /** Finalized lines (including pending saves) for the read-only meeting assistant. */
+  onUtterancesChange?: (utterances: Utterance[]) => void;
+  /** Keep assistant dictation out of the meeting microphone transcriber. */
+  questionActive?: boolean;
 }
 
 interface Notice { text: string; kind: 'status' | 'alert' }
@@ -69,7 +73,7 @@ function SpeakerRename({ label, onRename }: { label: string; onRename: (name: st
 }
 
 export function TranscriptPanel({
-  api, meetingId, accountId = null, meetingStartedAt, userName: sharedName, onUserNameChange, onSeedsExtracted,
+  api, meetingId, accountId = null, meetingStartedAt, userName: sharedName, onUserNameChange, onSeedsExtracted, onUtterancesChange, questionActive = false,
 }: Props) {
   const [snapshot, setSnapshot] = useState<TranscriptSnapshot>(EMPTY);
   const [partials, setPartials] = useState<Partial<Record<AudioChannel, string>>>({});
@@ -85,6 +89,9 @@ export function TranscriptPanel({
   };
   const session = useRef<TranscriptSession | null>(null);
   const capture = useRef<OnlineCapture | null>(null);
+  const question = useRef(questionActive);
+  question.current = questionActive;
+  useEffect(() => { capture.current?.setMicrophoneMuted?.(questionActive); }, [questionActive]);
   const startedAt = useRef<number | null>(null);
   const sharedClock = useRef(meetingStartedAt);
   sharedClock.current = meetingStartedAt;
@@ -92,6 +99,11 @@ export function TranscriptPanel({
   const meetingSeconds = () => (Date.now() - (sharedClock.current ?? (startedAt.current ??= Date.now()))) / 1000;
   const notified = useRef(onSeedsExtracted);
   notified.current = onSeedsExtracted;
+  const transcriptChanged = useRef(onUtterancesChange);
+  transcriptChanged.current = onUtterancesChange;
+  useEffect(() => {
+    transcriptChanged.current?.(snapshot.entries.map(({ utterance }) => utterance));
+  }, [snapshot.entries]);
   const unsupported = useMemo(() => checkTabCaptureSupport(browserEnvironment()), []);
 
   useEffect(() => {
@@ -153,7 +165,8 @@ export function TranscriptPanel({
         },
         onWarning: (text) => setNotice({ text, kind: 'alert' }),
         onEnded: (reason, message) => { void finish(reason, message); },
-      }, { userName, baseSec: meetingSeconds() });
+      }, { userName, baseSec: meetingSeconds(), isMicrophoneMuted: () => question.current });
+      capture.current.setMicrophoneMuted?.(question.current);
       setCapturing(true);
     } catch (reason) {
       setNotice({ text: reason instanceof Error ? reason.message : 'Could not start capture.', kind: 'alert' });
@@ -229,6 +242,7 @@ export function TranscriptPanel({
       {notice && <p role={notice.kind}>{notice.text}</p>}
       {snapshot.error && <p role="alert">{snapshot.error}</p>}
       {capturing && <p role="status">Transcribing the shared tab and your microphone.</p>}
+      {capturing && questionActive && <p role="status">Your meeting microphone transcription is paused for this question. Other participants are still transcribed.</p>}
       {snapshot.extracting && <p role="status">Extracting commitments…</p>}
       {snapshot.suggestions.length > 0 && (
         <section aria-labelledby="completions-heading">
