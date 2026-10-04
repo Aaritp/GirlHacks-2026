@@ -6,6 +6,26 @@ Dates are `YYYY-MM-DD`; datetimes include a UTC offset (normally `Z`). IDs are n
 strings up to 128 characters without `/`, `\`, `?`, or `#`. Clients generate UUIDs for
 new objects and retain IDs when retrying.
 
+## Person B 2.0 additions (account foundation integration pending)
+
+- `POST /ingest`: `{ accountId, sourceType: email|chat|document, title, text }`
+  returns `{ source, seeds, roots }`. Instead of text, accept structured
+  `messages: [{ author, recipients?, timestamp?, text, externalId? }]`, or
+  document `filename` + `fileBase64`. Exactly one content representation is required.
+- `POST /slack/sync`: `{ accountId, channelId }` returns
+  `{ importedMessages, lastSyncedTs, sources, seeds }`. Server bot token only.
+- `POST /accounts/{id}/followup`: returns `{ subject, body }`; never sends email.
+- All three routes require the shared account lookup; missing integration is
+  explicit 503 ACCOUNT_FOUNDATION_PENDING. See [Person B handoff](person-b.md).
+- Import limits: 100,000 text characters, 5 MB per file, 50 PDF pages, 200 chunks.
+  413 indicates oversized input, 415 unsupported extension, 429 Slack rate limiting
+  (Retry-After header), 409 conflicting channel/account mapping or empty draft context.
+- Sources retain original text/metadata, seeds retain accountId and a short quote.
+  Existing meetingId partitions are preserved; imported data uses the account's
+  documented ingestion partition. Timeline queries exclude internal source records.
+- The typed feature client expects Prisha's `GET /accounts` to return
+  `{ accounts: Account[] }`; that shared route is not implemented by Person B.
+
 | Method | Route | Input | Successful response |
 | --- | --- | --- | --- |
 | GET | `/health` | — | `{ status, service, stage }` |

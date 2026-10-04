@@ -15,10 +15,12 @@ export interface Seed {
   text: string;
   owner: string | null;
   deadline: string | null;
-  kind: 'commitment' | 'decision';
+  kind: 'commitment' | 'decision' | 'risk' | 'customer_need';
   status: 'seed' | 'sprout' | 'bloom' | 'wilted';
   health: number;
-  sourceType: 'meeting' | 'whiteboard' | 'leaves';
+  sourceType: 'meeting' | 'whiteboard' | 'leaves' | 'email' | 'chat' | 'document' | 'slack';
+  accountId?: string | null;
+  quote?: string | null;
   sourceId: string;
   timestampSec: number | null;
   lastActivity: string;
@@ -45,7 +47,9 @@ export interface Utterance {
 export interface Source {
   id: string;
   meetingId: string;
-  type: 'meeting' | 'whiteboard';
+  type: 'meeting' | 'whiteboard' | 'email' | 'chat' | 'document' | 'slack';
+  accountId?: string | null;
+  text?: string | null;
   title: string;
   blobUrl?: string;
   createdAt: string;

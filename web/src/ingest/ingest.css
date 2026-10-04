@@ -1,0 +1,18 @@
+.ingest-panel { max-width: 1150px; margin: auto; padding: 32px 24px; font-family: system-ui, sans-serif; color: #173c2b; }
+.ingest-panel h1 { font-size: 2.6rem; margin-bottom: 8px; }
+.ingest-eyebrow { text-transform: uppercase; letter-spacing: .1em; font-size: .8rem; }
+.ingest-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-top: 24px; }
+.ingest-panel section, .ingest-panel article { border: 1px solid #cad9cf; border-radius: 14px; padding: 22px; margin-bottom: 20px; background: #f8fbf7; }
+.ingest-panel label { display: block; font-weight: 600; margin: 14px 0; }
+.ingest-panel input, .ingest-panel select, .ingest-panel textarea { display: block; box-sizing: border-box; width: 100%; padding: 10px; margin-top: 6px; border: 1px solid #809a8a; border-radius: 6px; font: inherit; background: white; color: #173c2b; }
+.ingest-panel button { min-height: 44px; padding: 10px 16px; border-radius: 8px; border: 1px solid #315840; background: #315840; color: white; cursor: pointer; margin: 4px 4px 4px 0; font: inherit; }
+.ingest-panel :focus-visible { outline: 3px solid #bf6512; outline-offset: 3px; }
+.ingest-panel button:disabled { opacity: .55; cursor: default; }
+.ingest-panel fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.ingest-panel pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 320px; overflow: auto; }
+.ingest-panel blockquote { border-left: 3px solid #749b79; margin-left: 0; padding-left: 14px; }
+.ingest-panel li { margin-bottom: 20px; }
+.ingest-panel small { font-weight: normal; }
+.ingest-error { padding: 12px; color: #832721; background: #fff0ed; }
+.ingest-notice { padding: 12px; background: #fff3d4; color: #614818; }
+@media (max-width: 760px) { .ingest-columns { grid-template-columns: 1fr; } .ingest-panel { padding: 18px 12px; } }

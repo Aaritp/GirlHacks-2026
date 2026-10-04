@@ -18,10 +18,12 @@ class Seed(WireModel):
     text: Text
     owner: str | None
     deadline: date | None
-    kind: Literal["commitment", "decision"]
+    kind: Literal["commitment", "decision", "risk", "customer_need"]
     status: Literal["seed", "sprout", "bloom", "wilted"]
     health: float = Field(ge=0, le=1)
-    sourceType: Literal["meeting", "whiteboard", "leaves"]
+    sourceType: Literal["meeting", "whiteboard", "leaves", "email", "chat", "document", "slack"]
+    accountId: Identifier | None = None
+    quote: str | None = Field(default=None, max_length=500)
     sourceId: Identifier
     timestampSec: float | None = Field(ge=0)
     lastActivity: AwareDatetime
@@ -32,7 +34,7 @@ class SeedPatch(WireModel):
     text: Text | None = None
     owner: str | None = None
     deadline: date | None = None
-    kind: Literal["commitment", "decision"] | None = None
+    kind: Literal["commitment", "decision", "risk", "customer_need"] | None = None
     status: Literal["seed", "sprout", "bloom", "wilted"] | None = None
     health: float | None = Field(default=None, ge=0, le=1)
     lastActivity: AwareDatetime | None = None
@@ -68,7 +70,14 @@ class Utterance(WireModel):
 class Source(WireModel):
     id: Identifier
     meetingId: Identifier
-    type: Literal["meeting", "whiteboard"]
+    type: Literal["meeting", "whiteboard", "email", "chat", "document", "slack"]
+    accountId: Identifier | None = None
+    text: str | None = Field(default=None, max_length=100000)
+    messages: list[dict] = Field(default_factory=list, max_length=200)
+    extractionItems: list[dict] | None = Field(default=None, max_length=200)
+    recordType: Literal["source", "slack_binding", "slack_checkpoint"] = "source"
+    channelId: str | None = None
+    syncTs: str | None = None
     title: Text
     blobUrl: str | None = None
     createdAt: AwareDatetime

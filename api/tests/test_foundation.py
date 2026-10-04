@@ -118,4 +118,5 @@ def test_service_stubs_do_not_claim_success(handlers, monkeypatch):
 def test_all_contract_routes_are_registered():
     routes = {function.get_trigger().get_dict_repr()["route"] for function in FUNCTIONS}
     assert routes == {"health", "speech-token", "utterances", "extract", "seeds", "seeds/{id}",
-                      "meetings/{meetingId}/grove", "whiteboard", "leaves/suggest", "leaves/compose"}
+                          "meetings/{meetingId}/grove", "whiteboard", "leaves/suggest", "leaves/compose",
+                          "ingest", "slack/sync", "accounts/{id}/followup"}

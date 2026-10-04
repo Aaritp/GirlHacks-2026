@@ -69,7 +69,7 @@ def validate_items(raw_items: list, utterances: list[Utterance]):
     by_id = {item.id: item for item in utterances}
     valid = []
     for raw in raw_items:
-        if not isinstance(raw, dict) or raw.get("kind") not in ("commitment", "decision"):
+        if not isinstance(raw, dict) or raw.get("kind") not in ("commitment", "decision", "risk", "customer_need"):
             continue
         text = raw.get("text").strip()[:MAX_TEXT] if isinstance(raw.get("text"), str) else ""
         cited = [by_id[uid] for uid in raw.get("utteranceIds") or [] if isinstance(uid, str) and uid in by_id]
@@ -104,11 +104,13 @@ def find_duplicate(item: dict, seeds: list[Seed]):
 
 
 def extract_and_save(store: GroveStore, meeting_id: str, utterances: list[Utterance],
-                     model: Callable[[dict], list[dict]], now: datetime | None = None) -> Grove:
+                     model: Callable[[dict], list[dict]], now: datetime | None = None,
+                     source: Source | None = None) -> Grove:
     now = now or datetime.now(timezone.utc)
     # Persist the transcript and its Source first so every seed can be traced back.
-    store.create_source(Source(id=meeting_id, meetingId=meeting_id, type="meeting",
-                               title="Meeting transcript", createdAt=now))
+    source = source or Source(id=meeting_id, meetingId=meeting_id, type="meeting",
+                              title="Meeting transcript", createdAt=now)
+    store.create_source(source)
     for utterance in utterances:
         store.save_utterance(utterance)
 
@@ -119,7 +121,7 @@ def extract_and_save(store: GroveStore, meeting_id: str, utterances: list[Uttera
     }
     items = validate_items(model(window), ordered)
 
-    known = store.list_seeds(meeting_id)
+    known = [seed for seed in store.list_seeds(meeting_id) if seed.sourceId == source.id]
     found: dict[str, Seed] = {}
     keys: dict[str, str] = {}
     for item in items:
@@ -130,8 +132,9 @@ def extract_and_save(store: GroveStore, meeting_id: str, utterances: list[Uttera
                 id=f"seed-{_digest(meeting_id, item['kind'], anchor.id, _normalize(item['text']))}",
                 meetingId=meeting_id, text=item["text"], owner=item["owner"], deadline=item["deadline"],
                 kind=item["kind"], status="seed", health=1,
-                sourceType="leaves" if anchor.via == "leaves" else "meeting", sourceId=meeting_id,
-                timestampSec=anchor.startSec, lastActivity=now, size=1,
+                sourceType="leaves" if anchor.via == "leaves" else source.type, sourceId=source.id,
+                accountId=source.accountId, quote=anchor.text[:500],
+                timestampSec=anchor.startSec if source.type == "meeting" else None, lastActivity=now, size=1,
             )
             # Deterministic IDs make a concurrent duplicate create resolve to the same seed.
             seed = store.create_seed(candidate) or store.get_seed(meeting_id, candidate.id)

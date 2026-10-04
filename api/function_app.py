@@ -7,11 +7,14 @@ from seeds import bp as seeds
 from shared.http import json_response
 from speech_token import bp as speech_token
 from whiteboard import bp as whiteboard
+from ingest import bp as ingest
+from slack_sync import bp as slack_sync
+from followup import bp as followup
 
 # Function keys are required when deployed. Core Tools allows local requests.
 # A production browser must use a trusted gateway / application auth, not a bundled key.
 app = func.FunctionApp(http_auth_level=func.AuthLevel.FUNCTION)
-for blueprint in (extract, leaves_compose, leaves_suggest, seeds, speech_token, whiteboard):
+for blueprint in (extract, leaves_compose, leaves_suggest, seeds, speech_token, whiteboard, ingest, slack_sync, followup):
     app.register_functions(blueprint)
 
 

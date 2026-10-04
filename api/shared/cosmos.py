@@ -114,6 +114,9 @@ class CosmosStore:
     def create_source(self, source: Source):
         return self._create("sources", source)
 
+    def list_sources(self, meeting_id: str):
+        return self._list("sources", Source, meeting_id)
+
     def get_source(self, meeting_id: str, source_id: str):
         return self._get("sources", Source, meeting_id, source_id)
 
