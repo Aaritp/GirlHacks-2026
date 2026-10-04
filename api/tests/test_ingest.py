@@ -241,6 +241,18 @@ def test_email_owner_uses_display_name_and_preserves_original_header(store, send
     assert result["seeds"][0]["owner"] == expected
     assert f"From: {sender}" in result["source"]["text"]
 
-def test_ingest_quote_is_limited_to_500_characters(store):
-    result = ingest(store, request(text="I will send the checklist. " * 30), model)
-    assert len(result["seeds"][0]["quote"]) == 500
+def test_ingest_quote_uses_shared_2000_character_limit(store):
+    from shared.models import MAX_QUOTE
+    result = ingest(store, request(text="I will send the checklist. " * 100), model)
+    assert MAX_QUOTE == 2000
+    assert len(result["seeds"][0]["quote"]) == MAX_QUOTE
+
+def test_slack_internal_records_are_excluded_from_account_timeline(store):
+    from accounts_timeline import build_timeline
+    sync(store, SlackSyncRequest(accountId="contoso", channelId="C123456"), FakeSlack(),
+         lambda backend, body, **kwargs: ingest(backend, body, model, **kwargs))
+    sources = store.list_account_sources("contoso")
+    assert {s.recordType for s in sources} == {"source", "slack_binding", "slack_checkpoint"}
+    timeline = build_timeline("contoso", sources, store.list_account_seeds("contoso"))
+    assert len(timeline["items"]) == 2
+    assert all(item["source"]["recordType"] == "source" for item in timeline["items"])

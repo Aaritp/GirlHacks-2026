@@ -1,7 +1,8 @@
 # Person B — Grovekeeper 2.0
 
 Implemented in the isolated `feat/ingest-slack` worktree, updated from main
-`092e4dd` (account backend and dashboard). Keep the PR unmerged pending live acceptance.
+`b02fb34` (account backend, dashboard, online capture and shared meeting clock).
+Keep the PR unmerged pending review and live acceptance.
 The original checkout and its uncommitted camera-disable changes are preserved.
 
 ## Try the UI
@@ -64,20 +65,20 @@ list_account_sources(account_id)             # all account sources, including me
 The UI uses shared Account/AccountContact types and the foundation's bare-array
 `GET /api/accounts -> Account[]` response. Account routes/storage remain Prisha's implementation.
 The merged dashboard is available at `/?accounts` or `/?account=ID`.
-Main still exposes `/extract/source`; it is preserved for compatibility during this
-merge, while the importer exclusively uses `/ingest`.
+Main's extraction model and pipeline are used unchanged. The importer calls
+`extract_and_save(..., source=...)` through `/ingest`; the duplicate `/extract/source`
+route has been removed on main.
 
 Shared edits to review with Prisha:
 
-- Additive nullable accountId/quote fields and new seed/source enum values in both
-  wire-model files. Existing meeting records remain readable.
+- Main owns accountId/quote and seed/source enum values in both wire-model files.
+  Its quote limit is 2,000 characters. Existing meeting records remain readable.
 - Source text/messages/extractionItems plus internal recordType/channelId/syncTs.
   `extractionItems` is an internal retry plan, omitted from import responses.
 - `list_sources(meeting_id)` added to both existing shared storage adapters. No
   new Cosmos containers, clients, credentials, partition keys or throughput.
-- Optional Source parameter on the existing extraction pipeline; meeting callers
-  retain the same signature and behavior. Citation quotes use actual chunk text.
-- Existing extraction schema/prompt now accepts risk/customer_need and message dates.
+- Main provides the optional Source parameter on the extraction pipeline; meeting
+  callers retain their behavior. Ingestion has no separate pipeline/model edits.
 - Three blueprint registrations and pypdf dependency.
 
 Until a coordinated partition migration, ingestion uses A's existing /meetingId
@@ -97,7 +98,7 @@ App.tsx adds the Add to grove view and a path back to the existing forest, reusi
 mock GroveApi. Person C should embed IngestPanel on the final account dashboard
 instead of duplicating API calls or source persistence. Main now supplies expanded
 source/kind labels in the forest inspector. Import chunks are not saved as meeting
-utterances; email sender display names are normalized and quotes are capped at 500 characters.
+utterances; email sender display names are normalized and quotes use main's 2,000-character limit.
 
 ## Slack setup (not provisioned here)
 

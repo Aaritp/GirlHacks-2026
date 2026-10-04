@@ -6,7 +6,7 @@ Dates are `YYYY-MM-DD`; datetimes include a UTC offset (normally `Z`). IDs are n
 strings up to 128 characters without `/`, `\`, `?`, or `#`. Clients generate UUIDs for
 new objects and retain IDs when retrying.
 
-## Person B 2.0 additions (account foundation integration pending)
+## Person B 2.0 additions
 
 - `POST /ingest`: `{ accountId, sourceType: email|chat|document, title, text }`
   returns `{ source, seeds, roots }`. Instead of text, accept structured
@@ -15,16 +15,14 @@ new objects and retain IDs when retrying.
 - `POST /slack/sync`: `{ accountId, channelId }` returns
   `{ importedMessages, lastSyncedTs, sources, seeds }`. Server bot token only.
 - `POST /accounts/{id}/followup`: returns `{ subject, body }`; never sends email.
-- All three routes require the shared account lookup; missing integration is
-  explicit 503 ACCOUNT_FOUNDATION_PENDING. See [Person B handoff](person-b.md).
+- All three routes use the shared account lookup. See [Person B handoff](person-b.md).
 - Import limits: 100,000 text characters, 5 MB per file, 50 PDF pages, 200 chunks.
   413 indicates oversized input, 415 unsupported extension, 429 Slack rate limiting
   (Retry-After header), 409 conflicting channel/account mapping or empty draft context.
 - Sources retain original text/metadata, seeds retain accountId and a short quote.
   Existing meetingId partitions are preserved; imported data uses the account's
   documented ingestion partition. Timeline queries exclude internal source records.
-- The typed feature client expects Prisha's `GET /accounts` to return
-  `{ accounts: Account[] }`; that shared route is not implemented by Person B.
+- The typed feature client uses the shared `GET /accounts -> Account[]` route.
 
 | Method | Route | Input | Successful response |
 | --- | --- | --- | --- |
@@ -32,7 +30,6 @@ new objects and retain IDs when retrying.
 | POST | `/speech-token` | — | `{ token, region }` |
 | POST | `/utterances` | `Utterance` | Saved `Utterance` |
 | POST | `/extract` | `{ meetingId, utterances: Utterance[], accountId? }` | `{ seeds: Seed[], roots: Root[] }` |
-| POST | `/extract/source` | `{ source: Source }` (email, chat, document, slack; `text` required) | `{ seeds: Seed[], roots: Root[] }` |
 | GET | `/meetings/{meetingId}/utterances` | — | `{ utterances: Utterance[] }` ordered by `startSec` |
 | GET | `/accounts` | — | `Account[]` sorted by name |
 | POST | `/accounts` | `Account` | Saved `Account` (201); 409 if the id exists |
@@ -82,9 +79,10 @@ new objects and retain IDs when retrying.
   unchanged for every seed. Their seeds have `timestampSec: null`.
 - `/extract` with `accountId` links the meeting's Source to that account on first use; later
   windows inherit it. A different `accountId` for an already-linked meeting → 409 `CONFLICT`.
-- `/extract/source` saves the Source, then extracts. Re-sending the same source returns the
-  same seeds; the same id with different text/account/type → 409 `CONFLICT`. Model failure →
-  502 with no seeds. Meeting text is never echoed in errors.
+- Text sources (email, chat, document, Slack) are ingested by `api/ingest`, which saves the
+  Source and calls `extract_and_save(..., source=source)` with utterance-shaped chunks of its
+  text. Those chunks are evidence only: they are not saved as utterances, and the seeds point at
+  the source (`sourceType` = source type, `sourceId` = source id, `timestampSec: null`).
 - `GET /meetings/{id}/utterances` returns an empty list for an unknown meeting (not 404).
 - `GET /accounts/{id}/timeline` returns every Source of the account, newest `createdAt` first,
   each with the seeds extracted from it (`seeds` is empty when there are none). Unknown

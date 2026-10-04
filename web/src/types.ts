@@ -49,7 +49,7 @@ export interface Utterance {
   via: 'voice' | 'leaves';
 }
 
-/** meetingId is the storage partition; imports share one partition per account. */
+/** Non-meeting sources use their own id as meetingId (the storage partition key). */
 export interface Source {
   id: string;
   meetingId: string;
@@ -74,7 +74,6 @@ export interface Account {
 export interface Grove { seeds: Seed[]; roots: Root[] }
 export interface SpeechToken { token: string; region: string }
 export interface ExtractRequest { meetingId: string; utterances: Utterance[]; accountId?: string | null }
-export interface ExtractSourceRequest { source: Source }
 export interface UtteranceList { utterances: Utterance[] }
 export interface WhiteboardRequest { meetingId: string; imageBase64: string }
 export interface WhiteboardResult { text: string; seeds: Seed[] }

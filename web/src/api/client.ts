@@ -24,7 +24,6 @@ export function createHttpApi(baseUrl = '/api', fetcher: typeof fetch = fetch): 
     getSpeechToken: () => request('/speech-token', 'POST'),
     saveUtterance: (body) => request('/utterances', 'POST', body),
     extract: (body) => request('/extract', 'POST', body),
-    extractSource: (body) => request('/extract/source', 'POST', body),
     getUtterances: (meetingId) => request(`/meetings/${encodeURIComponent(meetingId)}/utterances`),
     createSeed: (body) => request('/seeds', 'POST', body),
     updateSeed: (meetingId, id, body) => request(
