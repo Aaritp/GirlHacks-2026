@@ -123,3 +123,19 @@ describe('Ask the Grove client', () => {
   });
 });
 
+describe('clear all', () => {
+  it('mock clears its in-memory data only with the exact phrase', async () => {
+    const api = createMockApi();
+    await expect(api.clearAll({ confirm: 'clear all' })).rejects.toMatchObject({ status: 400 });
+    const result = await api.clearAll({ confirm: 'CLEAR ALL' });
+    expect(result.deleted.seeds).toBe(demoGrove.seeds.length);
+    expect(await api.getGrove(DEMO_MEETING_ID)).toEqual({ seeds: [], roots: [] });
+  });
+
+  it('HTTP client posts to /maintenance/clear-all', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(Response.json({ deleted: {}, keptAccounts: true }));
+    await createHttpApi('/api', fetcher).clearAll({ confirm: 'CLEAR ALL', keepAccounts: true });
+    expect(fetcher.mock.calls[0][0]).toBe('/api/maintenance/clear-all');
+  });
+});
+

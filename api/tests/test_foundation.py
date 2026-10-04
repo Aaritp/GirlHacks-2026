@@ -114,7 +114,7 @@ def test_speech_missing_configuration_is_503(handlers, monkeypatch):
 
 def test_all_contract_routes_are_registered():
     routes = {function.get_trigger().get_dict_repr()["route"] for function in FUNCTIONS}
-    assert routes == {"health", "ask", "speech-token", "utterances", "extract", "seeds", "seeds/{id}",
+    assert routes == {"health", "ask", "maintenance/clear-all", "speech-token", "utterances", "extract", "seeds", "seeds/{id}",
                       "meetings/{meetingId}/grove", "meetings/{meetingId}/utterances", "accounts", "accounts/{id}/timeline",
                       "whiteboard",
                       "ingest", "slack/sync", "accounts/{id}/followup"}

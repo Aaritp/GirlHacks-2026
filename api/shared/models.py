@@ -189,6 +189,20 @@ class AskResponse(WireModel):
     filters: AskFilters
 
 
+CLEAR_ALL_PHRASE = "CLEAR ALL"
+
+
+class ClearAllRequest(WireModel):
+    """Development reset. The phrase must be typed exactly; the server must also opt in."""
+    confirm: str
+    keepAccounts: bool = True
+
+
+class ClearAllResult(WireModel):
+    deleted: dict[str, int]
+    keptAccounts: bool
+
+
 class ExtractRequest(WireModel):
     meetingId: Identifier
     utterances: list[Utterance] = Field(min_length=1, max_length=200)
