@@ -1,5 +1,6 @@
+from datetime import datetime, timedelta, timezone
 from typing import Literal, Annotated
-from pydantic import Field, model_validator
+from pydantic import AwareDatetime, Field, model_validator
 from shared.models import Identifier, WireModel
 
 MAX_TEXT = 100000
@@ -26,6 +27,9 @@ class IngestRequest(WireModel):
     messages: list[Message] | None = Field(default=None, min_length=1, max_length=200)
     filename: str | None = Field(default=None, max_length=255)
     fileBase64: str | None = Field(default=None, max_length=6990508)
+    # When the conversation or document actually happened (e.g. an older email). Sets the
+    # Source date and the reference date for relative deadlines. Defaults to now; never future.
+    occurredAt: AwareDatetime | None = None
 
     @model_validator(mode="after")
     def content(self):
@@ -39,6 +43,8 @@ class IngestRequest(WireModel):
             raise ValueError("Messages exceed text limit")
         if self.messages and len(self.model_dump_json()) > 500000:
             raise ValueError("Message metadata exceeds import limit")
+        if self.occurredAt and self.occurredAt > datetime.now(timezone.utc) + timedelta(minutes=5):
+            raise ValueError("occurredAt cannot be in the future")
         if self.sourceType == "slack" and (not self.messages or any(not m.externalId for m in self.messages)):
             raise ValueError("Slack messages require stable external IDs")
         return self

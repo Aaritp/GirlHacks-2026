@@ -80,6 +80,19 @@ both panels share that name and one meeting clock.
 Browser extraction mocks turn each utterance into a seed;
 they are **not AI extraction**. Mock composition joins picked words and never speaks.
 
+## Demo data
+
+With `func start` running against real storage, load the demo accounts and sources once:
+
+```sh
+python3 scripts/seed_demo_data.py
+```
+
+It creates Contoso, Fabrikam and Northwind and ingests 2 emails, 1 chat and 1 document for each
+through `/api/ingest` (one Azure OpenAI extraction per new source). Dates are relative to the run
+day. Re-running is safe: existing accounts and sources are reused, not duplicated. To start from a
+clean slate, delete the `grovekeeper` database in Cosmos Data Explorer; it is recreated on first use.
+
 ## Ownership and branches
 
 This Leaves branch merges main at 39d1646, including the account backend,

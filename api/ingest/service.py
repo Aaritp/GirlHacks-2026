@@ -82,7 +82,7 @@ def ingest(store, request: IngestRequest, model=call_model, *, check_account=Tru
         raise FeatureError(413, "TOO_MANY_CHUNKS", "Split this import into smaller parts.")
     if not chunks:
         raise FeatureError(400, "EMPTY_SOURCE", "There is no text to import.")
-    now = datetime.now(timezone.utc)
+    now = request.occurredAt or datetime.now(timezone.utc)
     if existing is None:
         window = {"referenceDate": now.date().isoformat(), "sourceType": request.sourceType,
             "messages": [m.model_dump() for m in messages],
