@@ -76,12 +76,33 @@ describe('account dashboard', () => {
     expect(detail.queryByText('Confirm the tax table mapping covers Quebec')).toBeNull();
   });
 
-  it('says a meeting transcript is not shown and quotes each seed instead', async () => {
-    setup('/?account=acct-northwind');
+  it('loads a meeting transcript only when the meeting is opened, in spoken order', async () => {
+    const data = createAccountsDemo();
+    data.utterances!.reverse();
+    const { api } = setup('/?account=acct-northwind', data);
+    const read = vi.spyOn(api, 'getUtterances');
+    fireEvent.click(await screen.findByRole('button', { name: /Re: sandbox credentials/ }));
+    expect(read).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: /Payroll migration kickoff/ }));
+    const lines = await within(await screen.findByRole('list', { name: 'Meeting transcript' })).findAllByRole('listitem');
+    expect(read).toHaveBeenCalledWith('src-nw-kickoff');
+    expect(lines.map((line) => line.textContent)).toEqual([
+      '0:12Dana We need the cutover finished before the January pay run.',
+      '0:31Alex I will send the integration checklist this week.',
+      '0:50Dana Agreed, we go with the phased rollout, hourly staff first.']);
+    expect(screen.queryByText(/Time-off balances/)).toBeNull();
+  });
+
+  it('reports a transcript that fails to load or was never saved', async () => {
+    const data = createAccountsDemo();
+    const { api } = setup('/?account=acct-northwind', { ...data, utterances: [] });
+    vi.spyOn(api, 'getUtterances').mockRejectedValueOnce(new ApiError(503, 'STORAGE_UNAVAILABLE', 'Storage is temporarily unavailable.'));
     fireEvent.click(await screen.findByRole('button', { name: /Payroll migration kickoff/ }));
+    expect((await screen.findByRole('alert')).textContent).toContain('Could not load the transcript. Storage is temporarily unavailable.');
     const detail = within(screen.getByRole('complementary', { name: 'Source details' }));
-    expect(detail.getByText(/transcript of this meeting is not shown here yet/)).toBeTruthy();
     expect(detail.getByText('I will send the integration checklist this week.').tagName).toBe('BLOCKQUOTE');
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(await screen.findByText('No transcript was saved for this meeting.')).toBeTruthy();
   });
 
   it('traces a seed to its source and quote', async () => {

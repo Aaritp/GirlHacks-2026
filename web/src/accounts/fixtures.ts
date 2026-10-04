@@ -1,4 +1,5 @@
 import type { AccountsData } from './api';
+import type { Utterance } from '../types';
 import type { AccountSeed, AccountSource, SeedKind, SourceType } from './types';
 
 /**
@@ -34,7 +35,20 @@ export function createAccountsDemo(now = Date.now()): AccountsData {
   const chat = source('acct-harbor', 'src-hb-chat', 'chat', 'Support chat with Priya', 1,
     'Priya: Is the summary coming? Leadership is asking whether we renew.\nJordan: Yes, I will have it to you tomorrow.');
 
+  const said = (meetingId: string, lines: [string, string][]): Utterance[] => lines.map(([speaker, text], index) =>
+    ({ id: `${meetingId}-u${index + 1}`, meetingId, speaker, text, startSec: 12 + index * 19, via: 'voice' }));
+
   return {
+    utterances: [
+      ...said(kickoff.meetingId, [
+        ['Dana', 'We need the cutover finished before the January pay run.'],
+        ['Alex', 'I will send the integration checklist this week.'],
+        ['Dana', 'Agreed, we go with the phased rollout, hourly staff first.']]),
+      ...said(call.meetingId, [
+        ['Priya', 'Time-off balances were wrong twice last quarter.'],
+        ['Jordan', 'I will send a root-cause summary.'],
+        ['Priya', 'We decided to keep weekly syncs until this is stable.']]),
+    ],
     accounts: [
       { id: 'acct-northwind', name: 'Northwind Logistics', aliases: ['Northwind', 'NWL'], industry: 'Transportation',
         contacts: [{ name: 'Dana Whitfield', role: 'Payroll director' }] },

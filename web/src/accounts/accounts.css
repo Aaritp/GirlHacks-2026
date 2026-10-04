@@ -74,6 +74,10 @@ a.nav-item { text-decoration: none; box-sizing: border-box; }
 .detail-source .source-icon { flex-basis: 30px; width: 30px; height: 30px; }
 .account-detail .button { margin-top: 18px; }
 .source-text { white-space: pre-wrap; overflow-wrap: anywhere; margin-top: 12px; max-height: 320px; overflow-y: auto; }
+.transcript { list-style: none; margin: 12px 0 0; padding: 0; max-height: 320px; overflow-y: auto; }
+.transcript li { display: grid; grid-template-columns: 46px minmax(0,1fr); gap: 8px; padding: 6px 0; overflow-wrap: anywhere; }
+.transcript-time { color: #53664b; font-size: 15px; font-variant-numeric: tabular-nums; padding-top: 2px; }
+.transcript strong { color: #53664b; margin-right: 4px; }
 .source-seeds { list-style: none; margin: 0; padding: 0; }
 .source-seeds li { padding: 10px 0; border-bottom: 1px solid #e0e7da; }
 .source-seeds .detail-muted { display: block; margin-top: 4px; }

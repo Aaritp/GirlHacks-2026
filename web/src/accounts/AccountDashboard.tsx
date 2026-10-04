@@ -4,7 +4,8 @@ import {
   Presentation, RefreshCw, Sprout, Video, X, type LucideIcon,
 } from 'lucide-react';
 import { PlantSymbol } from '../forest/PlantSymbol';
-import { formatDeadline } from '../forest/health';
+import { formatDeadline, sourceTime } from '../forest/health';
+import type { Utterance } from '../types';
 import type { AccountsApi } from './api';
 import {
   UNASSIGNED, accountSeeds, displayState, filterSeeds, formatDay, kindLabels, newestFirst, noFilter,
@@ -131,7 +132,7 @@ export function AccountDashboard({ api, accountId, account, demo = false, onBack
                   <span className="timeline-body"><span className="timeline-title">{source.title}</span>
                     <span className="timeline-meta">{sourceLabels[source.type]} · <time dateTime={source.createdAt}>{formatDay(source.createdAt)}</time> · {found.length} {found.length === 1 ? 'seed' : 'seeds'}</span></span>
                 </button></li>)}</ol>}
-            {opened && <SourceDetail source={opened.source} seeds={opened.seeds.filter((seed) => seed.accountId === accountId)} date={date}
+            {opened && <SourceDetail key={opened.source.id} api={api} source={opened.source} seeds={opened.seeds.filter((seed) => seed.accountId === accountId)} date={date}
               onClose={() => setSourceId(null)} onSeed={(id) => { setFilter(noFilter); setSeedId(id); }} />}
           </div>
         </section>
@@ -159,14 +160,36 @@ function SeedDetail({ seed, source, busy, date, onClose, onShowSource, onStatus 
   </aside>;
 }
 
-function SourceDetail({ source, seeds, date, onClose, onSeed }: {
-  source: AccountSource; seeds: AccountSeed[]; date: string; onClose: () => void; onSeed: (id: string) => void;
+/** Fetched only when a meeting is opened, so the timeline itself stays light. */
+function MeetingTranscript({ api, meetingId }: { api: AccountsApi; meetingId: string }) {
+  const [utterances, setUtterances] = useState<Utterance[] | null>(null);
+  const [error, setError] = useState('');
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    let active = true;
+    setUtterances(null); setError('');
+    api.getUtterances(meetingId).then(
+      (result) => { if (active) setUtterances([...result].sort((a, b) => a.startSec - b.startSec)); },
+      (reason: unknown) => { if (active) setError(`Could not load the transcript. ${reason instanceof Error ? reason.message : 'Please try again.'}`); },
+    );
+    return () => { active = false; };
+  }, [api, meetingId, attempt]);
+  if (error) return <p className="detail-muted" role="alert">{error} <button className="row-link" onClick={() => setAttempt(attempt + 1)}>Retry</button></p>;
+  if (!utterances) return <p className="detail-muted" role="status">Loading transcript…</p>;
+  if (utterances.length === 0) return <p className="detail-muted">No transcript was saved for this meeting.</p>;
+  return <ol className="transcript" aria-label="Meeting transcript">{utterances.map((item) =>
+    <li key={item.id}><span className="transcript-time">{sourceTime(item.startSec)}</span><span><strong>{item.speaker}</strong> {item.text}</span></li>)}</ol>;
+}
+
+function SourceDetail({ api, source, seeds, date, onClose, onSeed }: {
+  api: AccountsApi; source: AccountSource; seeds: AccountSeed[]; date: string; onClose: () => void; onSeed: (id: string) => void;
 }) {
   return <aside className="account-detail" id="source-detail" tabIndex={-1} aria-label="Source details">
     <div className="panel-heading"><h3>{source.title}</h3><button className="icon-button" onClick={onClose} aria-label="Close source details"><X size={18} /></button></div>
     <p className="detail-source"><SourceIcon type={source.type} size={16} />{sourceLabels[source.type]} · {formatDay(source.createdAt)}</p>
     {source.text ? <p className="source-text">{source.text}</p>
-      : <p className="detail-muted">{source.type === 'meeting' ? 'The transcript of this meeting is not shown here yet. Each seed below quotes the words it came from.' : 'The text of this source is not available.'}</p>}
+      : source.type === 'meeting' ? <MeetingTranscript api={api} meetingId={source.meetingId} />
+        : <p className="detail-muted">The text of this source is not available.</p>}
     <h5>Seeds from this source</h5>
     {seeds.length === 0 ? <p className="detail-muted">Nothing was extracted from this source.</p>
       : <ul className="source-seeds">{seeds.map((seed) => {

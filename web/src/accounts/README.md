@@ -68,13 +68,17 @@ against those three reads and stays unregistered until then.
 
 Still open:
 
-- **Meeting transcripts.** A meeting source has null text because its words are stored as
-  utterances, and there is no route that returns a meeting's utterances. Selecting a meeting
-  in the timeline therefore shows its seeds and their quotes, and says the transcript is not
-  shown. To show it, either the timeline includes the transcript for meeting sources or a
-  `GET /meetings/{id}/utterances` route is added.
-- **Ingestion.** Until email, chat, document and Slack ingestion exists, a real account's
-  timeline only contains meetings.
+- **Meeting transcripts.** Agreed: `GET /meetings/{meetingId}/utterances` returns
+  `{ "utterances": Utterance[] }` sorted by `startSec`; an unknown or empty meeting gives
+  an empty list and a storage failure gives 503. The dashboard already calls that route
+  when a meeting is opened in the timeline, and only then. Until the route is in main it
+  returns an error against the real API. When `api.getUtterances` lands in the shared
+  client, switch `getUtterances` in `api.ts` to use it.
+- **Ingestion.** Person B owns email, chat, document and Slack ingestion; the text-based
+  extraction route lives in `api/extract`. Until both exist, a real account's timeline only
+  contains meetings.
+- **Health timer.** Agreed not to register it for now. The account view does not use the
+  seven-day decay; the store methods it needs stay on `feat/health-storage`.
 - **New kinds.** Extraction does not produce `risk` or `customer_need` yet, so real data
   will show no wilting risks.
 
@@ -103,5 +107,6 @@ because the timeline does not carry them.
 - `GET /api/accounts` and `GET /api/accounts/{id}/timeline` against memory and Cosmos.
 - Marking a seed done from an account, and the reload afterwards.
 - A self-updating commitment turning to bloom while the dashboard is open.
-- Each real source type (Slack, email, chat, document, meeting) appearing with its text.
+- Each real source type (Slack, email, chat, document) appearing with its text, and a
+  meeting appearing with its transcript.
 - Account isolation with real data from two accounts.

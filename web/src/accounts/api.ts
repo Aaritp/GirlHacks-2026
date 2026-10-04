@@ -1,11 +1,13 @@
 import { ApiError } from '../api/contracts';
-import type { Seed } from '../types';
+import type { Seed, Utterance } from '../types';
 import type { Account, AccountSeed, AccountTimeline } from './types';
 
 /** The dashboard's only door to data. Both implementations fail loudly; neither falls back to the other. */
 export interface AccountsApi {
   listAccounts(): Promise<Account[]>;
   getTimeline(accountId: string): Promise<AccountTimeline>;
+  /** A meeting's transcript, sorted by startSec. Unknown or empty meeting gives an empty list. */
+  getUtterances(meetingId: string): Promise<Utterance[]>;
   /** Completing or reopening counts as progress, so it also refreshes lastActivity. */
   setSeedStatus(seed: AccountSeed, status: 'sprout' | 'bloom'): Promise<AccountSeed>;
 }
@@ -28,6 +30,8 @@ export function createHttpAccountsApi(baseUrl = '/api', fetcher: typeof fetch = 
   return {
     listAccounts: () => request('/accounts'),
     getTimeline: (accountId) => request(`/accounts/${encodeURIComponent(accountId)}/timeline`),
+    getUtterances: async (meetingId) =>
+      (await request<{ utterances: Utterance[] }>(`/meetings/${encodeURIComponent(meetingId)}/utterances`)).utterances,
     async setSeedStatus(seed, status) {
       const saved = await request<Partial<Seed>>(
         `/seeds/${encodeURIComponent(seed.id)}?meetingId=${encodeURIComponent(seed.meetingId)}`, 'PATCH',
@@ -37,7 +41,7 @@ export function createHttpAccountsApi(baseUrl = '/api', fetcher: typeof fetch = 
   };
 }
 
-export interface AccountsData { accounts: Account[]; timelines: AccountTimeline[] }
+export interface AccountsData { accounts: Account[]; timelines: AccountTimeline[]; utterances?: Utterance[] }
 
 /** Per-instance, in-memory sample data. Changes reset on reload. */
 export function createMockAccountsApi(initial: AccountsData): AccountsApi {
@@ -55,6 +59,10 @@ export function createMockAccountsApi(initial: AccountsData): AccountsApi {
   return {
     async listAccounts() { return structuredClone(data.accounts); },
     async getTimeline(accountId) { return structuredClone(timeline(accountId)); },
+    async getUtterances(meetingId) {
+      return structuredClone((data.utterances ?? []).filter((item) => item.meetingId === meetingId)
+        .sort((a, b) => a.startSec - b.startSec));
+    },
     async setSeedStatus(seed, status) {
       const stored = data.timelines.flatMap((entry) => entry.items).flatMap((item) => item.seeds)
         .find((item) => item.id === seed.id && item.accountId === seed.accountId);
