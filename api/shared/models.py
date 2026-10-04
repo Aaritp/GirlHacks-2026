@@ -18,6 +18,17 @@ class WireModel(BaseModel):
     model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
 
 
+SeedSourceType = Literal["meeting", "whiteboard", "email", "chat", "document", "slack", "leaves"]
+
+
+class CompletedBy(WireModel):
+    """The source that showed a commitment was finished, recorded when a user confirms it."""
+    sourceId: Identifier
+    sourceType: SeedSourceType
+    quote: str = Field(min_length=1, max_length=MAX_QUOTE)
+    timestampSec: float | None = Field(default=None, ge=0)
+
+
 class Seed(WireModel):
     id: Identifier
     meetingId: Identifier
@@ -27,7 +38,7 @@ class Seed(WireModel):
     kind: SeedKind
     status: Literal["seed", "sprout", "bloom", "wilted"]
     health: float = Field(ge=0, le=1)
-    sourceType: Literal["meeting", "whiteboard", "email", "chat", "document", "slack", "leaves"]
+    sourceType: SeedSourceType
     sourceId: Identifier
     timestampSec: float | None = Field(ge=0)
     lastActivity: AwareDatetime
@@ -36,6 +47,8 @@ class Seed(WireModel):
     accountId: Identifier | None = None
     # The exact source words the seed was extracted from; null when none was recorded.
     quote: str | None = Field(default=None, max_length=MAX_QUOTE)
+    # Set when a user confirms a suggested completion; null otherwise (or after reopening).
+    completedBy: CompletedBy | None = None
 
 
 class SeedPatch(WireModel):
@@ -47,12 +60,13 @@ class SeedPatch(WireModel):
     health: float | None = Field(default=None, ge=0, le=1)
     lastActivity: AwareDatetime | None = None
     size: float | None = Field(default=None, gt=0)
+    completedBy: CompletedBy | None = None
 
     @model_validator(mode="after")
     def validate_patch(self):
         if not self.model_fields_set:
             raise ValueError("At least one mutable field is required")
-        for field in self.model_fields_set - {"owner", "deadline"}:
+        for field in self.model_fields_set - {"owner", "deadline", "completedBy"}:
             if getattr(self, field) is None:
                 raise ValueError(f"{field} cannot be null")
         return self
@@ -114,6 +128,21 @@ class UtteranceList(WireModel):
 class Grove(WireModel):
     seeds: list[Seed]
     roots: list[Root]
+
+
+class CompletionSuggestion(WireModel):
+    """An open commitment the transcript says is done. Only a suggestion: the user confirms it."""
+    seedId: Identifier
+    meetingId: Identifier  # the seed's partition, for PATCH /seeds/{seedId}?meetingId=
+    seedText: Text
+    evidenceQuote: str = Field(min_length=1, max_length=MAX_QUOTE)
+    sourceId: Identifier
+    sourceType: SeedSourceType
+    timestampSec: float | None = Field(default=None, ge=0)
+
+
+class ExtractResult(Grove):
+    completions: list[CompletionSuggestion] = Field(default_factory=list)
 
 
 class ExtractRequest(WireModel):

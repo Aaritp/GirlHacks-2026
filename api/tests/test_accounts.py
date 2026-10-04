@@ -145,7 +145,7 @@ def test_meeting_account_link_is_fixed_once_set(backend):
 
 
 def test_meeting_extract_route_maps_account_conflict_to_409(backend, openai_env):
-    openai_env.setattr(model, "call_model", lambda window: [])
+    openai_env.setattr(model, "call_extraction", lambda window: [])
     payload = {"meetingId": "meet-1", "utterances": [utterance("u1", 1, "Hi.").model_dump(mode="json")]}
     assert HANDLERS["extract"](http({**payload, "accountId": ACCOUNT.id})).status_code == 200
     conflict = HANDLERS["extract"](http({**payload, "accountId": "acct-harbor"}))

@@ -6,6 +6,11 @@ import { createTranscriptSession, type TranscriptSnapshot } from './session';
 import { speakerLabel } from './speech';
 
 const MEETING = 'meeting-a';
+const OPEN_SEED = {
+  id: 'open-1', meetingId: MEETING, text: 'Send the payroll integration checklist', owner: 'Alex', deadline: null,
+  kind: 'commitment' as const, status: 'sprout' as const, health: 1, sourceType: 'meeting' as const,
+  sourceId: MEETING, timestampSec: 3, lastActivity: '2026-10-01T13:00:00Z', size: 1,
+};
 
 function setup(overrides: Partial<Pick<GroveApi, 'saveUtterance' | 'extract' | 'updateSeed'>> = {}) {
   const backing = createMockApi({ seeds: [], roots: [] });
@@ -234,5 +239,43 @@ describe('transcript session', () => {
     // old-2 is within 10 s of the new line, so it is re-sent only as overlap context; old-1 is not.
     expect(windowIds(api.extract.mock.calls[0])).toEqual(['old-2', 'u1']);
     expect(api.saveUtterance.mock.calls.map(([u]) => u.id)).toEqual(['u1']);
+  });
+
+  it('suggests completing an open commitment, then blooms it only after Yes', async () => {
+    const backing = createMockApi({ seeds: [{ ...OPEN_SEED }], roots: [] });
+    const api = { ...backing, updateSeed: vi.fn(backing.updateSeed), extract: vi.fn(backing.extract) };
+    const session = createTranscriptSession({ api, meetingId: MEETING, newId: () => 'd1' });
+    await session.add(say(40, 'Quick update: the payroll checklist is done and sent.'));
+    await session.flush();
+    const [suggestion] = session.snapshot().suggestions;
+    expect(suggestion).toMatchObject({ seedId: 'open-1', seedText: OPEN_SEED.text, timestampSec: 40 });
+    expect(api.updateSeed).not.toHaveBeenCalled();
+    expect((await backing.getGrove(MEETING)).seeds.find((seed) => seed.id === 'open-1')?.status).toBe('sprout');
+
+    await session.confirmCompletion('open-1');
+    expect(api.updateSeed).toHaveBeenCalledWith(MEETING, 'open-1', expect.objectContaining({
+      status: 'bloom', completedBy: { sourceId: MEETING, sourceType: 'meeting',
+        quote: 'Quick update: the payroll checklist is done and sent.', timestampSec: 40 } }));
+    expect(session.snapshot().suggestions).toEqual([]);
+    expect((await backing.getGrove(MEETING)).seeds.find((seed) => seed.id === 'open-1')?.status).toBe('bloom');
+  });
+
+  it('never re-asks after No, and keeps the prompt with an error if saving fails', async () => {
+    const backing = createMockApi({ seeds: [{ ...OPEN_SEED }], roots: [] });
+    let n = 0;
+    const failing = createTranscriptSession({
+      api: { ...backing, updateSeed: async () => { throw new ApiError(503, 'STORAGE_UNAVAILABLE', 'Storage is temporarily unavailable.'); } },
+      meetingId: MEETING, newId: () => `f${++n}`,
+    });
+    await failing.add(say(1, 'The payroll checklist is done.'));
+    await failing.flush();
+    await failing.confirmCompletion('open-1');
+    expect(failing.snapshot().suggestions).toHaveLength(1);
+    expect(failing.snapshot().error).toMatch(/Could not mark .*Storage is temporarily unavailable/);
+
+    failing.dismissCompletion('open-1');
+    await failing.add(say(50, 'Again: the payroll checklist is finished.'));
+    await failing.flush();
+    expect(failing.snapshot().suggestions).toEqual([]);
   });
 });

@@ -1,12 +1,13 @@
 import type {
-  ComposeRequest, ComposeResult, ExtractRequest, Grove, Seed, SeedPatch,
+  ComposeRequest, ComposeResult, ExtractRequest, ExtractResult, Grove, Seed, SeedPatch,
   SpeechToken, SuggestRequest, Suggestions, Utterance, UtteranceList, WhiteboardRequest, WhiteboardResult,
 } from '../types';
 
 export interface GroveApi {
   getSpeechToken(): Promise<SpeechToken>;
   saveUtterance(utterance: Utterance): Promise<Utterance>;
-  extract(request: ExtractRequest): Promise<Grove>;
+  /** Seeds and roots found in this window, plus suggested completions of open commitments. */
+  extract(request: ExtractRequest): Promise<ExtractResult>;
   /** A meeting's saved transcript, ordered by startSec. Unknown meetings return an empty list. */
   getUtterances(meetingId: string): Promise<UtteranceList>;
   createSeed(seed: Seed): Promise<Seed>;
