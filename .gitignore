@@ -12,3 +12,6 @@ local.settings.json
 .local-tools/
 *.log
 .DS_Store
+.impeccable/review/
+.impeccable/mocks/
+.impeccable/config.local.json
