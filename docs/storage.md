@@ -50,6 +50,11 @@ copies. Every lookup is scoped by `meetingId`; IDs only need to be unique within
 | `create_source(source)` | `Source \| None` | `None` if it exists. |
 | `get_source(meeting_id, source_id)` | `Source \| None` | |
 | `get_grove(meeting_id)` | `Grove` | Seeds and roots of one meeting. |
+| `create_account(account)` | `Account \| None` | `None` if the id exists. |
+| `get_account(account_id)` | `Account \| None` | |
+| `list_accounts()` | `list[Account]` | Sorted by name. Cross-partition. |
+| `list_account_sources(account_id)` | `list[Source]` | Every source of the account, across meetings. Cross-partition. |
+| `list_account_seeds(account_id)` | `list[Seed]` | Every seed of the account, across meetings. Cross-partition. |
 
 Errors: `StorageNotConfigured` and `StorageUnavailable` (both map to 503 via
 `storage_errors`). A stored document that fails model validation raises
@@ -61,7 +66,9 @@ IDs from meeting, kind, source utterance and text), so a conflict means "already
 
 ## Cosmos layout
 
-Containers `seeds`, `roots`, `utterances`, `sources`, each partitioned on `/meetingId`.
+Containers `seeds`, `roots`, `utterances`, `sources`, each partitioned on `/meetingId`, plus
+`accounts` partitioned on `/id`. Account reads filter on `accountId` across partitions: fine at
+demo scale; re-partitioning by account is the long-term option if accounts grow large.
 Documents are the wire models' JSON plus Cosmos system fields (stripped on read). The adapter
 creates the database and containers if missing on first use. Queries always pass
 `partition_key`, so no request crosses meetings.

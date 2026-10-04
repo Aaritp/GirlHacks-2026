@@ -4,6 +4,12 @@ import type { Root, Seed, SeedPatch } from '../types';
 import { formatDeadline, growthLabels, growthState, seedHealth, sourceTime } from './health';
 import { PlantSymbol } from './PlantSymbol';
 
+// Keyed by string so source types added to the shared contract are labeled, never shown as "Meeting".
+const sourceNames: Record<string, string> = {
+  meeting: 'Meeting', whiteboard: 'Whiteboard', leaves: 'Whispering Leaves',
+  email: 'Email', chat: 'Chat', document: 'Document', slack: 'Slack',
+};
+
 interface Props {
   seed: Seed; seeds: Seed[]; roots: Root[]; busy: boolean; now: number;
   onUpdate: (patch: SeedPatch, message?: string) => Promise<Seed | null>;
@@ -55,7 +61,7 @@ export function SeedInspector({ seed, seeds, roots, busy, now, onUpdate, onSelec
       <button className="icon-button" aria-label="Make plant larger" disabled={busy || seed.size >= 1.5} onClick={() => { void onUpdate({ size: Math.min(1.5, seed.size + .25) }, 'Plant size saved.'); }}><Plus size={16} /></button>
     </div></div>
     <section className="source-section"><h4><Clock3 size={15} />Where it started</h4>
-      <p>{seed.sourceType === 'whiteboard' ? 'Whiteboard' : seed.sourceType === 'leaves' ? 'Whispering Leaves' : 'Meeting'} · {sourceTime(seed.timestampSec)}</p>
+      <p>{sourceNames[seed.sourceType] ?? 'Other source'} · {sourceTime(seed.timestampSec)}</p>
       <span className="source-id">Source: {seed.sourceId}</span>
     </section>
     {connections.length > 0 && <section className="connection-section"><h4><Link2 size={15} />Connected roots</h4>

@@ -409,3 +409,4 @@ h1, h2, h3, h4, strong, b { font-weight: 400; }
 .workspace-extension button:hover:not(:disabled) { background: #e7edde88; }
 .workspace-extension ol, .workspace-extension ul { margin: 8px 0; padding-left: 22px; }
 .workspace-extension li { margin: 6px 0; overflow-wrap: anywhere; }
+a.nav-item { text-decoration: none; }
