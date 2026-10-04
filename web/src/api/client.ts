@@ -1,8 +1,8 @@
 import type { GroveApi } from './contracts';
 import { ApiError } from './contracts';
 
-export function createHttpApi(baseUrl = '/api', fetcher: typeof fetch = fetch): GroveApi {
-  async function request<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
+export function createJsonClient(baseUrl = '/api', fetcher: typeof fetch = fetch) {
+  return async function request<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
     const response = await fetcher(`${baseUrl.replace(/\/$/, '')}${path}`, {
       method,
       headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
@@ -15,7 +15,11 @@ export function createHttpApi(baseUrl = '/api', fetcher: typeof fetch = fetch): 
     }
     if (payload === null) throw new ApiError(502, 'INVALID_RESPONSE', 'Expected a JSON response');
     return payload as T;
-  }
+  };
+}
+
+export function createHttpApi(baseUrl = '/api', fetcher: typeof fetch = fetch): GroveApi {
+  const request = createJsonClient(baseUrl, fetcher);
   return {
     getSpeechToken: () => request('/speech-token', 'POST'),
     saveUtterance: (body) => request('/utterances', 'POST', body),

@@ -80,6 +80,11 @@ class Source(WireModel):
     id: Identifier
     meetingId: Identifier
     type: SourceType
+    messages: list[dict] = Field(default_factory=list, max_length=200)
+    extractionItems: list[dict] | None = Field(default=None, max_length=200)
+    recordType: Literal["source", "slack_binding", "slack_checkpoint"] = "source"
+    channelId: str | None = None
+    syncTs: str | None = None
     title: Text
     blobUrl: str | None = None
     createdAt: AwareDatetime

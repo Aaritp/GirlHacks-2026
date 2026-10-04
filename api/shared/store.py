@@ -36,6 +36,7 @@ class GroveStore(Protocol):
     # Ordered by startSec.
     def list_utterances(self, meeting_id: str) -> list[Utterance]: ...
     def create_source(self, source: Source) -> Source | None: ...
+    def list_sources(self, meeting_id: str) -> list[Source]: ...
     def get_source(self, meeting_id: str, source_id: str) -> Source | None: ...
     def get_grove(self, meeting_id: str) -> Grove: ...
     # Accounts span meetings. Account reads are cross-partition queries filtered by accountId.
@@ -116,6 +117,9 @@ class MemoryStore:
 
     def create_source(self, source: Source):
         return self._create(self.sources, source)
+
+    def list_sources(self, meeting_id: str):
+        return self._list(self.sources, meeting_id)
 
     def get_source(self, meeting_id: str, source_id: str):
         return self._get(self.sources, meeting_id, source_id)
