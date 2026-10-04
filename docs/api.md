@@ -32,6 +32,7 @@ new objects and retain IDs when retrying.
 | POST | `/utterances` | `Utterance` | Saved `Utterance` |
 | POST | `/extract` | `{ meetingId, utterances: Utterance[], accountId? }` | `{ seeds, roots, completions }` |
 | GET | `/meetings/{meetingId}/utterances` | — | `{ utterances: Utterance[] }` ordered by `startSec` |
+| POST | `/ask` | `{ question, accountId?, meetingId?, recentUtterances? }` | `{ answer, answered, citations, filters }` |
 | GET | `/accounts` | — | `Account[]` sorted by name |
 | POST | `/accounts` | `Account` | Saved `Account` (201); 409 if the id exists |
 | GET | `/accounts/{id}/timeline` | — | `{ accountId, items: [{ source: Source, seeds: Seed[] }] }` newest first |
@@ -71,6 +72,23 @@ new objects and retain IDs when retrying.
   Compose accepts user-spelled words too; it returns a preview and never triggers TTS.
 - Features always call the `GroveApi` interface. Browser mocks retain changes for that
   instance only; reset by reloading. HTTP never silently falls back to mock success.
+
+## Ask the Grove
+
+`POST /ask` answers plain-language questions from stored data only ("filter, then ask"):
+1. gpt-5-mini turns the question into filters `{ accountIds, kinds, status, dateFrom, dateTo, keywords }`,
+   given today's date and the account list. The server drops unknown accounts and bad dates; an
+   `accountId` in the request (an account page) always wins.
+2. The server retrieves matching seeds (with quotes), source excerpts and meeting transcript lines,
+   plus `recentUtterances` (the live meeting so far) when sent.
+3. The model answers only from that numbered evidence and cites evidence ids. `citations[]` are built
+   from stored records: `{ sourceId, sourceType, meetingId, accountId?, seedId?, title?, quote,
+   timestampSec? }` (meetings jump to `timestampSec`). If the evidence does not answer the question,
+   or an answer has no valid citation, the response is `answered: false`, `answer: "I don't have that
+   in the grove."` and no citations.
+
+Errors: 400 invalid body, 503 `SERVICE_NOT_CONFIGURED`, 502 `UPSTREAM_ERROR`, 503 storage. The browser
+mock (`VITE_USE_MOCKS=true`) returns a keyword-match answer labelled "Mock answer (not AI)".
 
 ## Self-updating commitments
 

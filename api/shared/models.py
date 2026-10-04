@@ -145,6 +145,50 @@ class ExtractResult(Grove):
     completions: list[CompletionSuggestion] = Field(default_factory=list)
 
 
+class AskRequest(WireModel):
+    """A plain-language question for Ask the Grove, optionally scoped to one account or meeting.
+    The live in-meeting assistant also sends the meeting's transcript so far."""
+    question: Annotated[str, Field(min_length=1, max_length=1000)]
+    accountId: Identifier | None = None
+    meetingId: Identifier | None = None
+    recentUtterances: list[Utterance] = Field(default_factory=list, max_length=200)
+
+    @model_validator(mode="after")
+    def nonblank(self):
+        if not self.question.strip():
+            raise ValueError("Ask a question")
+        return self
+
+
+class Citation(WireModel):
+    """Where an answer came from, built by the server from stored records (never model text)."""
+    sourceId: Identifier
+    sourceType: SeedSourceType
+    meetingId: Identifier
+    accountId: Identifier | None = None
+    seedId: Identifier | None = None
+    title: str | None = None
+    quote: str = Field(max_length=MAX_QUOTE)
+    timestampSec: float | None = None
+
+
+class AskFilters(WireModel):
+    accountIds: list[Identifier] = Field(default_factory=list)
+    kinds: list[SeedKind] = Field(default_factory=list)
+    status: Literal["open", "done", "any"] = "any"
+    dateFrom: date | None = None
+    dateTo: date | None = None
+    keywords: list[str] = Field(default_factory=list)
+
+
+class AskResponse(WireModel):
+    answer: str
+    answered: bool
+    citations: list[Citation]
+    # The filters actually applied, so the UI can show what was searched.
+    filters: AskFilters
+
+
 class ExtractRequest(WireModel):
     meetingId: Identifier
     utterances: list[Utterance] = Field(min_length=1, max_length=200)
