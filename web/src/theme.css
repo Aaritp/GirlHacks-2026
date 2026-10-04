@@ -1,0 +1,120 @@
+/*
+ * Enchanted forest ground, wand cursor and scroll motion for every surface. Imported last,
+ * from main.tsx, so it re-grounds each feature's own stylesheet without editing it.
+ */
+:root {
+  --paper: #dcecd6;
+  --paper-raised: #eef6e7;
+  --paper-sunk: #c2ddc4;
+  --rule-soft: #b2cdb4;
+  --rule: #86a88c;
+  --muted: #445246;
+  --line: var(--rule-soft);
+  --sage: var(--paper-sunk);
+  --wand: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22 viewBox=%220 0 16 16%22 shape-rendering=%22crispEdges%22%3E%3Crect x=%220%22 y=%223%22 width=%221%22 height=%221%22 fill=%22%232f6b4a%22/%3E%3Crect x=%221%22 y=%223%22 width=%221%22 height=%221%22 fill=%22%235c9a5f%22/%3E%3Crect x=%222%22 y=%222%22 width=%221%22 height=%221%22 fill=%22%235c9a5f%22/%3E%3Crect x=%222%22 y=%223%22 width=%221%22 height=%221%22 fill=%22%23b9dc8c%22/%3E%3Crect x=%222%22 y=%224%22 width=%221%22 height=%221%22 fill=%22%235c9a5f%22/%3E%3Crect x=%223%22 y=%220%22 width=%221%22 height=%221%22 fill=%22%232f6b4a%22/%3E%3Crect x=%223%22 y=%221%22 width=%221%22 height=%221%22 fill=%22%235c9a5f%22/%3E%3Crect x=%223%22 y=%222%22 width=%221%22 height=%221%22 fill=%22%23b9dc8c%22/%3E%3Crect x=%223%22 y=%223%22 width=%221%22 height=%221%22 fill=%22%23f1f8d8%22/%3E%3Crect x=%223%22 y=%224%22 width=%221%22 height=%221%22 fill=%22%23b9dc8c%22/%3E%3Crect x=%223%22 y=%225%22 width=%221%22 height=%221%22 fill=%22%235c9a5f%22/%3E%3Crect x=%223%22 y=%226%22 width=%221%22 height=%221%22 fill=%22%232f6b4a%22/%3E%3Crect x=%224%22 y=%222%22 width=%221%22 height=%221%22 fill=%22%235c9a5f%22/%3E%3Crect x=%224%22 y=%223%22 width=%221%22 height=%221%22 fill=%22%23b9dc8c%22/%3E%3Crect x=%224%22 y=%224%22 width=%221%22 height=%221%22 fill=%22%235c9a5f%22/%3E%3Crect x=%225%22 y=%223%22 width=%221%22 height=%221%22 fill=%22%235c9a5f%22/%3E%3Crect x=%226%22 y=%223%22 width=%221%22 height=%221%22 fill=%22%232f6b4a%22/%3E%3Crect x=%226%22 y=%226%22 width=%221%22 height=%221%22 fill=%22%23183b32%22/%3E%3Crect x=%227%22 y=%226%22 width=%221%22 height=%221%22 fill=%22%234f7a63%22/%3E%3Crect x=%227%22 y=%227%22 width=%221%22 height=%221%22 fill=%22%23183b32%22/%3E%3Crect x=%228%22 y=%227%22 width=%221%22 height=%221%22 fill=%22%234f7a63%22/%3E%3Crect x=%228%22 y=%228%22 width=%221%22 height=%221%22 fill=%22%23183b32%22/%3E%3Crect x=%229%22 y=%228%22 width=%221%22 height=%221%22 fill=%22%234f7a63%22/%3E%3Crect x=%229%22 y=%229%22 width=%221%22 height=%221%22 fill=%22%23183b32%22/%3E%3Crect x=%2210%22 y=%229%22 width=%221%22 height=%221%22 fill=%22%234f7a63%22/%3E%3Crect x=%2210%22 y=%2210%22 width=%221%22 height=%221%22 fill=%22%23183b32%22/%3E%3Crect x=%2211%22 y=%2210%22 width=%221%22 height=%221%22 fill=%22%234f7a63%22/%3E%3Crect x=%2211%22 y=%2211%22 width=%221%22 height=%221%22 fill=%22%23183b32%22/%3E%3Crect x=%2212%22 y=%2211%22 width=%221%22 height=%221%22 fill=%22%234f7a63%22/%3E%3Crect x=%2212%22 y=%2212%22 width=%221%22 height=%221%22 fill=%22%23183b32%22/%3E%3Crect x=%2213%22 y=%2212%22 width=%221%22 height=%221%22 fill=%22%234f7a63%22/%3E%3Crect x=%2213%22 y=%2213%22 width=%221%22 height=%221%22 fill=%22%23183b32%22/%3E%3Crect x=%2213%22 y=%2214%22 width=%221%22 height=%221%22 fill=%22%230f251e%22/%3E%3Crect x=%2214%22 y=%2213%22 width=%221%22 height=%221%22 fill=%22%230f251e%22/%3E%3Crect x=%2214%22 y=%2214%22 width=%221%22 height=%221%22 fill=%22%230f251e%22/%3E%3C/svg%3E") 6 6;
+  --wand-active: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22 viewBox=%220 0 16 16%22 shape-rendering=%22crispEdges%22%3E%3Crect x=%220%22 y=%223%22 width=%221%22 height=%221%22 fill=%22%232f6b4a%22/%3E%3Crect x=%221%22 y=%223%22 width=%221%22 height=%221%22 fill=%22%235c9a5f%22/%3E%3Crect x=%222%22 y=%222%22 width=%221%22 height=%221%22 fill=%22%235c9a5f%22/%3E%3Crect x=%222%22 y=%223%22 width=%221%22 height=%221%22 fill=%22%23b9dc8c%22/%3E%3Crect x=%222%22 y=%224%22 width=%221%22 height=%221%22 fill=%22%235c9a5f%22/%3E%3Crect x=%223%22 y=%220%22 width=%221%22 height=%221%22 fill=%22%232f6b4a%22/%3E%3Crect x=%223%22 y=%221%22 width=%221%22 height=%221%22 fill=%22%235c9a5f%22/%3E%3Crect x=%223%22 y=%222%22 width=%221%22 height=%221%22 fill=%22%23b9dc8c%22/%3E%3Crect x=%223%22 y=%223%22 width=%221%22 height=%221%22 fill=%22%23f1f8d8%22/%3E%3Crect x=%223%22 y=%224%22 width=%221%22 height=%221%22 fill=%22%23b9dc8c%22/%3E%3Crect x=%223%22 y=%225%22 width=%221%22 height=%221%22 fill=%22%235c9a5f%22/%3E%3Crect x=%223%22 y=%226%22 width=%221%22 height=%221%22 fill=%22%232f6b4a%22/%3E%3Crect x=%224%22 y=%222%22 width=%221%22 height=%221%22 fill=%22%235c9a5f%22/%3E%3Crect x=%224%22 y=%223%22 width=%221%22 height=%221%22 fill=%22%23b9dc8c%22/%3E%3Crect x=%224%22 y=%224%22 width=%221%22 height=%221%22 fill=%22%235c9a5f%22/%3E%3Crect x=%225%22 y=%223%22 width=%221%22 height=%221%22 fill=%22%235c9a5f%22/%3E%3Crect x=%226%22 y=%223%22 width=%221%22 height=%221%22 fill=%22%232f6b4a%22/%3E%3Crect x=%226%22 y=%226%22 width=%221%22 height=%221%22 fill=%22%23183b32%22/%3E%3Crect x=%227%22 y=%220%22 width=%221%22 height=%221%22 fill=%22%235c9a5f%22/%3E%3Crect x=%227%22 y=%226%22 width=%221%22 height=%221%22 fill=%22%234f7a63%22/%3E%3Crect x=%227%22 y=%227%22 width=%221%22 height=%221%22 fill=%22%23183b32%22/%3E%3Crect x=%228%22 y=%227%22 width=%221%22 height=%221%22 fill=%22%234f7a63%22/%3E%3Crect x=%228%22 y=%228%22 width=%221%22 height=%221%22 fill=%22%23183b32%22/%3E%3Crect x=%229%22 y=%223%22 width=%221%22 height=%221%22 fill=%22%235c9a5f%22/%3E%3Crect x=%229%22 y=%228%22 width=%221%22 height=%221%22 fill=%22%234f7a63%22/%3E%3Crect x=%229%22 y=%229%22 width=%221%22 height=%221%22 fill=%22%23183b32%22/%3E%3Crect x=%2210%22 y=%222%22 width=%221%22 height=%221%22 fill=%22%235c9a5f%22/%3E%3Crect x=%2210%22 y=%223%22 width=%221%22 height=%221%22 fill=%22%23d8efb4%22/%3E%3Crect x=%2210%22 y=%224%22 width=%221%22 height=%221%22 fill=%22%235c9a5f%22/%3E%3Crect x=%2210%22 y=%229%22 width=%221%22 height=%221%22 fill=%22%234f7a63%22/%3E%3Crect x=%2210%22 y=%2210%22 width=%221%22 height=%221%22 fill=%22%23183b32%22/%3E%3Crect x=%2211%22 y=%223%22 width=%221%22 height=%221%22 fill=%22%235c9a5f%22/%3E%3Crect x=%2211%22 y=%2210%22 width=%221%22 height=%221%22 fill=%22%234f7a63%22/%3E%3Crect x=%2211%22 y=%2211%22 width=%221%22 height=%221%22 fill=%22%23183b32%22/%3E%3Crect x=%2212%22 y=%2211%22 width=%221%22 height=%221%22 fill=%22%234f7a63%22/%3E%3Crect x=%2212%22 y=%2212%22 width=%221%22 height=%221%22 fill=%22%23183b32%22/%3E%3Crect x=%2213%22 y=%2212%22 width=%221%22 height=%221%22 fill=%22%234f7a63%22/%3E%3Crect x=%2213%22 y=%2213%22 width=%221%22 height=%221%22 fill=%22%23183b32%22/%3E%3Crect x=%2213%22 y=%2214%22 width=%221%22 height=%221%22 fill=%22%230f251e%22/%3E%3Crect x=%2214%22 y=%2213%22 width=%221%22 height=%221%22 fill=%22%230f251e%22/%3E%3Crect x=%2214%22 y=%2214%22 width=%221%22 height=%221%22 fill=%22%230f251e%22/%3E%3C/svg%3E") 6 6;
+  background: #dcecd6;
+  cursor: var(--wand), auto;
+}
+body { background: transparent; }
+::selection { background: #d5e999; color: #183b32; }
+
+/*
+ * The forest: sunlight through mist, then three tree lines receding into it. Fixed behind
+ * everything and kept pale, so dark ink stays readable anywhere on the page.
+ */
+body::before {
+  content: ''; position: fixed; inset: 0; z-index: -2; pointer-events: none;
+  background:
+    radial-gradient(ellipse 46% 40% at 30% 8%, #fffbdcf2 0%, #fbf8d680 42%, transparent 72%),
+    url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 1440 400%22 preserveAspectRatio=%22none%22%3E%3Cdefs%3E%3ClinearGradient id=%22a%22 x1=%220%22 y1=%220%22 x2=%220%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%23cfe6cd%22/%3E%3Cstop offset=%221%22 stop-color=%22%23e3f1df%22/%3E%3C/linearGradient%3E%3ClinearGradient id=%22b%22 x1=%220%22 y1=%220%22 x2=%220%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%23bcdcbd%22/%3E%3Cstop offset=%221%22 stop-color=%22%23d9ecd6%22/%3E%3C/linearGradient%3E%3ClinearGradient id=%22c%22 x1=%220%22 y1=%220%22 x2=%220%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%23abd1ad%22/%3E%3Cstop offset=%221%22 stop-color=%22%23cbe4c9%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath fill=%22url%28%23a%29%22 d=%22M0 400V190a86 77 0 0 1 172 0a51 26 0 0 1 102 0a91.5 67 0 0 1 183 0a72 36 0 0 1 144 0a53.5 31 0 0 1 107 0a52.5 44 0 0 1 105 0v-2a52.5 39 0 0 1 105 0a73 37 0 0 1 146 0a82 54 0 0 1 164 0a84 61 0 0 1 168 0a58 43 0 0 1 116 0V400z%22/%3E%3Cpath fill=%22url%28%23b%29%22 d=%22M0 400V250a45.5 30 0 0 1 91 0a53 37 0 0 1 106 0v12a86.5 78 0 0 1 173 0v15a50 41 0 0 1 100 0v9a39 21 0 0 1 78 0a93.5 54 0 0 1 187 0v8a74 50 0 0 1 148 0a69.5 49 0 0 1 139 0v5a36 20 0 0 1 72 0a42.5 36 0 0 1 85 0v-8a70 56 0 0 1 140 0a44.5 25 0 0 1 89 0v-3a39.5 33 0 0 1 79 0v-14V400z%22/%3E%3Cpath fill=%22url%28%23c%29%22 d=%22M0 400V310a63.5 40 0 0 1 127 0v-7a31.5 27 0 0 1 63 0a34 23 0 0 1 68 0a36 27 0 0 1 72 0a36 22 0 0 1 72 0a79.5 44 0 0 1 159 0a33.5 22 0 0 1 67 0a75 64 0 0 1 150 0a40.5 30 0 0 1 81 0a48.5 31 0 0 1 97 0v0a64 36 0 0 1 128 0v8a55 40 0 0 1 110 0v7a37 27 0 0 1 74 0a58 35 0 0 1 116 0v-5a42.5 35 0 0 1 85 0V400z%22/%3E%3C/svg%3E") center bottom / 100% min(46vh, 430px) no-repeat,
+    linear-gradient(180deg, #f1f8e6 0%, #e4f1df 34%, #d8ecd6 62%, #cfe6cd 100%);
+}
+/* Fireflies: a handful of soft lights drifting in the lower mist. */
+body::after {
+  content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(circle 5px at 12% 78%, #fff9c4 0, #fff3a000 100%),
+    radial-gradient(circle 4px at 27% 64%, #fffbd5 0, #fff3a000 100%),
+    radial-gradient(circle 6px at 46% 86%, #fff7b8 0, #fff3a000 100%),
+    radial-gradient(circle 4px at 63% 70%, #fffbd5 0, #fff3a000 100%),
+    radial-gradient(circle 5px at 81% 82%, #fff9c4 0, #fff3a000 100%),
+    radial-gradient(circle 3px at 92% 60%, #fffbd5 0, #fff3a000 100%);
+}
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes firefly-drift {
+    0% { translate: 0 0; opacity: .35; }
+    35% { opacity: 1; }
+    70% { opacity: .55; }
+    100% { translate: 14px -26px; opacity: .9; }
+  }
+  body::after { animation: firefly-drift 11s ease-in-out infinite alternate; }
+}
+
+/* Wand cursor in forest greens: plain over the page, one small sparkle over anything that can be pressed. Text fields keep the text caret. */
+:is(a, button, summary, select, label, [role="button"], input[type="checkbox"], input[type="date"]):not(:disabled) { cursor: var(--wand-active), pointer; }
+button:disabled { cursor: not-allowed; }
+.arranging button.garden-seed:not(:disabled) { cursor: grab; }
+.arranging .garden-node.dragging button.garden-seed:not(:disabled) { cursor: grabbing; }
+
+/* A sunlit clearing behind the garden. */
+.garden { background: radial-gradient(ellipse at 50% 46%, #fffbe2e6 0%, #fbf8d973 38%, transparent 72%); }
+.root-network path { stroke: #8fb094; }
+.root-network path.active { stroke: #7d8f5f; }
+
+/* Ask the Grove */
+.ask-box, .ask-context { background: #f1f8ebe0; border-color: var(--rule-soft); }
+.ask-box textarea, .ask-answer, .ask-source, .ask-context-card { background: #f7fbf1; }
+.ask-box textarea { border-color: var(--rule); caret-color: #183b32; }
+.ask-source, .ask-context-card { border-color: var(--rule-soft); }
+.ask-source-text, .ask-transcript, .ask-scope, .ask-demo { background: #cfe4cd; }
+.ask-voice > button, .ask-citation { background: var(--paper); border-color: var(--rule); }
+.ask-transcript [aria-current="location"] { background: #e3efb9; }
+
+/* Add to grove */
+.ingest-panel section, .ingest-panel article { background: #f1f8ebe0; border-color: var(--rule-soft); }
+.ingest-panel input, .ingest-panel select, .ingest-panel textarea { background: #f7fbf1; border-color: var(--rule); caret-color: #183b32; }
+
+/* The Grove / Add to grove switch above the workspace. */
+nav[aria-label="Workspaces"] button {
+  min-height: 44px; padding: 8px 4px; margin-right: 12px; border: 0; border-bottom: 1px solid transparent;
+  background: transparent; color: #465448; font-size: 18px;
+}
+nav[aria-label="Workspaces"] button[aria-pressed="true"] { color: #203a30; border-bottom-color: #466257; }
+nav[aria-label="Workspaces"] button:hover { color: #203a30; }
+
+/* A hairline opens each account section; it draws itself in where scroll motion is available. */
+.account-section { position: relative; }
+.account-section::before { content: ''; position: absolute; left: 0; right: 0; top: -17px; height: 1px; background: var(--rule); }
+
+/*
+ * Scroll reveal. `reveal.ts` marks content `data-reveal="pending"` and flips it to "shown"
+ * the first time it enters the viewport. Nothing here applies unless that script ran, and
+ * it does not run under reduced motion.
+ */
+[data-reveal] {
+  transition:
+    opacity 720ms cubic-bezier(.16,1,.3,1) var(--reveal-delay, 0ms),
+    translate 820ms cubic-bezier(.16,1,.3,1) var(--reveal-delay, 0ms),
+    scale 820ms cubic-bezier(.16,1,.3,1) var(--reveal-delay, 0ms),
+    filter 620ms cubic-bezier(.16,1,.3,1) var(--reveal-delay, 0ms);
+}
+/* Plants grow up out of the ground. */
+[data-reveal-kind="grow"] { transform-origin: 50% 80%; }
+[data-reveal="pending"][data-reveal-kind="grow"] { opacity: 0; scale: .8; translate: 0 38px; filter: blur(6px); }
+/* Rows slide in along the reading line. */
+[data-reveal="pending"][data-reveal-kind="slide"] { opacity: 0; translate: -26px 0; }
+/* Headings and panels lift and sharpen. */
+[data-reveal="pending"][data-reveal-kind="rise"] { opacity: 0; translate: 0 26px; filter: blur(4px); }
+/* A section itself stays put; only its rule draws in from the left. */
+.account-section[data-reveal]::before { transition: clip-path 1100ms cubic-bezier(.16,1,.3,1); }
+.account-section[data-reveal="pending"]::before { clip-path: inset(0 100% 0 0); }
+.account-section[data-reveal="shown"]::before { clip-path: inset(0 0 0 0); }
+/* Dragging a plant must follow the pointer exactly. */
+.arranging [data-reveal-kind="grow"] { transition: none; }
+
+/* Native fields inside the transcript panel sit on the same paper as the rest. */
+.workspace-extension section[aria-labelledby="transcript-heading"] :is(input, select, textarea) {
+  min-height: 40px; padding: 7px 10px; border: 1px solid var(--rule); border-radius: 10px;
+  background: #f7fbf1; color: #203a30; caret-color: #183b32;
+}

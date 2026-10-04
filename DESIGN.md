@@ -6,12 +6,14 @@ colors:
   metal-deep: "#10271f"
   metal-reflection: "#6b877a"
   citron: "#d5e999"
-  sage-ground: "#edf2e7"
-  page: "#f5f7f4"
-  panel: "#ffffff"
+  page: "#dcecd6"
+  paper-raised: "#eef6e7"
+  paper-sunk: "#c2ddc4"
+  rule: "#86a88c"
+  rule-soft: "#b2cdb4"
   ink: "#203a30"
-  muted: "#617167"
-  line: "#dfe6dd"
+  muted: "#445246"
+  line: "#b2cdb4"
   planted: "#719b45"
   growing: "#4a8058"
   blossom: "#d79cdd"
@@ -113,8 +115,17 @@ four plant states. Text labels repeat the meaning of every color.
 
 ### Neutral
 
-The page is cool off-white, panels are white, and the plot is pale sage. Ink carries
-primary text; green-tinted secondary text keeps labels connected to these grounds.
+The ground is an enchanted forest seen through mist, drawn in CSS and inline SVG in
+`web/src/theme.css`: warm sunlight high on the left, a pale green sky, and three tree
+lines receding into mist along the bottom of the viewport, with a few drifting firefly
+lights. It is fixed behind the content and kept pale, so ink and secondary text stay at
+least 4.5:1 anywhere on the page. Panels and fields are a near-white leaf green, slightly
+translucent so the forest reads through them; hairlines are a soft green rule. There is no
+pure white surface and no photograph.
+
+The pointer is a pixel-art wand in forest greens: a pine handle and a leaf-green star tip
+(the hotspot). It gains one small sparkle over anything that can be pressed. Text fields keep the text caret, disabled controls
+keep the not-allowed cursor, and arranging plants keeps grab and grabbing.
 
 **The State Has Words Rule.** Every growth color also has a text label and a distinct plant silhouette.
 
@@ -207,6 +218,12 @@ relationship labels. Botanical layers crossfade over 480ms; plant lift and scale
 360ms, both with `cubic-bezier(.16,1,.3,1)`. Growth changes appear after a successful
 save. Reduced-motion preferences remove animations, transitions, and smooth scrolling;
 status text remains available.
+
+Unless the visitor has asked for reduced motion, content plays a short entrance the first
+time it comes into view (`web/src/reveal.ts`): plants grow up from the ground, list and
+timeline rows slide in along the reading line, panels lift and sharpen, and section rules
+draw from the left. Items arriving together follow one another by 70ms. Without the
+script everything is simply visible.
 
 Desktop arrangement supports pointer drag and Alt + arrow keys. Drag follows the
 pointer without easing. Positions are stored locally per meeting, independently of
