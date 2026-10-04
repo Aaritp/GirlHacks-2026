@@ -89,9 +89,13 @@ export function TranscriptPanel({
   };
   const session = useRef<TranscriptSession | null>(null);
   const capture = useRef<OnlineCapture | null>(null);
-  const question = useRef(questionActive);
-  question.current = questionActive;
-  useEffect(() => { capture.current?.setMicrophoneMuted?.(questionActive); }, [questionActive]);
+  // Meet's own mute cannot reach this tab, so the user mutes Grovekeeper's mic here.
+  // A voice question to the assistant also mutes it, so questions never enter the transcript.
+  const [selfMuted, setSelfMuted] = useState(false);
+  const micMuted = selfMuted || questionActive;
+  const muted = useRef(micMuted);
+  muted.current = micMuted;
+  useEffect(() => { capture.current?.setMicrophoneMuted?.(micMuted); }, [micMuted]);
   const startedAt = useRef<number | null>(null);
   const sharedClock = useRef(meetingStartedAt);
   sharedClock.current = meetingStartedAt;
@@ -165,8 +169,8 @@ export function TranscriptPanel({
         },
         onWarning: (text) => setNotice({ text, kind: 'alert' }),
         onEnded: (reason, message) => { void finish(reason, message); },
-      }, { userName, baseSec: meetingSeconds(), isMicrophoneMuted: () => question.current });
-      capture.current.setMicrophoneMuted?.(question.current);
+      }, { userName, baseSec: meetingSeconds(), isMicrophoneMuted: () => muted.current });
+      capture.current.setMicrophoneMuted?.(muted.current);
       setCapturing(true);
     } catch (reason) {
       setNotice({ text: reason instanceof Error ? reason.message : 'Could not start capture.', kind: 'alert' });
@@ -242,7 +246,16 @@ export function TranscriptPanel({
       {notice && <p role={notice.kind}>{notice.text}</p>}
       {snapshot.error && <p role="alert">{snapshot.error}</p>}
       {capturing && <p role="status">Transcribing the shared tab and your microphone.</p>}
-      {capturing && questionActive && <p role="status">Your meeting microphone transcription is paused for this question. Other participants are still transcribed.</p>}
+      {capturing && (
+        <p>
+          <button type="button" aria-pressed={selfMuted} onClick={() => setSelfMuted((value) => !value)}>
+            {selfMuted ? 'Unmute my mic' : 'Mute my mic'}
+          </button>{' '}
+          {!selfMuted && <span>Muting yourself in Zoom, Meet or Teams does not stop Grovekeeper; use this button.</span>}
+        </p>
+      )}
+      {capturing && selfMuted && <p role="status">Your microphone is muted in Grovekeeper: nothing you say is transcribed. Other participants still are.</p>}
+      {capturing && questionActive && !selfMuted && <p role="status">Your meeting microphone transcription is paused for this question. Other participants are still transcribed.</p>}
       {snapshot.extracting && <p role="status">Extracting commitments…</p>}
       {snapshot.suggestions.length > 0 && (
         <section aria-labelledby="completions-heading">
