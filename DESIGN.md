@@ -171,9 +171,9 @@ itself stays flat and uninterrupted.
 
 ## Shapes
 
-Nothing is boxed and nothing casts a drop shadow. A panel such as Ask the Grove has no
-outline, corner or shadow: its content sits on a blurred wash of pale leaf green that
-dissolves into the forest. Notes inside a panel are plain text, not chips or bars.
+Nothing is boxed and nothing casts a drop shadow. A panel such as Ask the Grove is a clearly
+visible sheet of pale leaf green with 36px corners, no outline and no shadow; a hair of
+blur softens its edge. Its scope label is a soft pill and its demo note is plain text.
 Controls are pills whose only depth is the metal sheen, fields have 22-24px corners and a
 soft focus glow, hover washes on rows and navigation are rounded, quotes sit on a soft
 tint instead of a side stripe, and section rules fade out toward both ends.

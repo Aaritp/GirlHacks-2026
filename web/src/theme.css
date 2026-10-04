@@ -142,12 +142,13 @@ code { font-family: inherit; font-size: 1em; }
   position: relative; isolation: isolate; border: 0; border-radius: 0; background: none; box-shadow: none;
 }
 .ask-box::before, .ask-context::before, .ingest-panel section::before, .ingest-panel article::before {
-  content: ''; position: absolute; inset: 6px; z-index: -1; pointer-events: none;
-  border-radius: 48px; background: #f5fbefd9; filter: blur(18px);
+  /* A clearly visible panel with no shadow: a rounded sheet whose edge is softened by a hair of blur. */
+  content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  border-radius: 36px; background: linear-gradient(180deg, #f8fcf3f2, #eef7e9e6); filter: blur(1.5px);
 }
-/* Notes inside a panel are plain text, not chips or bars. */
-.ask-scope, .ask-demo { background: none; padding: 0; border-radius: 0; }
-.ask-demo { margin-top: .35rem; }
+/* The scope label is a soft pill; the demo note is plain text rather than a full-width bar. */
+.ask-scope { border-radius: 999px; padding: .45rem .95rem; background: #d5e8d2b3; }
+.ask-demo { background: none; padding: 0; border-radius: 0; margin-top: .35rem; }
 .ask-box textarea, .ingest-panel textarea { border-radius: 24px; }
 .ask-box textarea, .ingest-panel :is(input, select, textarea),
 .workspace-extension section[aria-labelledby="transcript-heading"] :is(input, select, textarea),
