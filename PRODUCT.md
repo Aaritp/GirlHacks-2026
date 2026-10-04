@@ -8,27 +8,34 @@ web
 
 ## Users
 
-Meeting participants tracking commitments and decisions, including people who cannot
-speak or type. Hackathon judges evaluate a working enterprise workflow.
+Client-account teams tracking commitments and decisions across online meetings,
+Slack, and pasted or uploaded email/chat/documents. Whispering Leaves supports
+participants composing speech with mouse and keyboard.
 
 ## Product Purpose
 
-Grovekeeper turns live meeting commitments into a living forest of traceable seeds.
+Grovekeeper is pivoting to a grove per client account, fed by multiple context sources.
 Participants review owners, deadlines, source context, progress, and health.
 
 ## Operating Context
 
 React/Vite/TypeScript browser app with Azure Functions and shared storage owned by
-Person A. Person C owns forest UI and seed health; B owns input tracking; D owns
-Whispering Leaves. The current backend is a memory scaffold, not live Cosmos.
+Person A. Person C owns forest UI and seed health; Person D owns
+Whispering Leaves. Person A's shared backend supports Cosmos and explicit local memory.
+Person B now owns ingestion and Slack. The input-tracking branch is not part of the
+new product. Shared account types/storage and the account dashboard are integrated;
+meeting partitions remain the storage key.
 
 ## Capabilities and Constraints
 
-Features consume one input bus for mouse, hand, and head controls. Source provenance
-is immutable. Camera processing stays local. Speech requires explicit confirmation.
-Seven-day inactivity decay is the base health rule. Deadline acceleration remains
-undecided. For this implementation, bloom is treated as completed and immune to decay;
-this is an implementation assumption to confirm with the team.
+Leaves uses native mouse/keyboard controls. Hand/head tracking and in-person
+capture are cut. Online capture uses a shared Zoom/Meet/Teams tab and captures the
+user's microphone separately. Transcript and Leaves share one name and meeting clock. Slack is the
+only live content connector; email/chat/docs arrive by paste or upload.
+Source provenance is immutable. Speech requires explicit confirmation.
+The meeting grove uses its existing inactivity health rule. The account dashboard
+shows completed seeds as blooming, overdue commitments and open risks as wilting,
+and other open seeds as growing.
 
 ## Brand Commitments
 
@@ -49,7 +56,7 @@ and fictional fixtures in web/src/api/fixtures.ts. No live customer claims or me
 
 ## Accessibility & Inclusion
 
-Keyboard and mouse remain available alongside head and hand input. Controls need
+Keyboard and mouse are the supported inputs. Controls need
 clear focus, readable labels, large targets, and reduced-motion support. State must
 be conveyed by text and shape as well as color.
 

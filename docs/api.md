@@ -43,6 +43,12 @@ new objects and retain IDs when retrying.
 
 ## Decisions clarified for integration
 
+- The shared account backend and dashboard are integrated. Leaves uses the existing
+  meeting repository and scopes suggestions to the selected meeting.
+- Leaves uses native mouse/keyboard controls and shares the transcript panel's
+  Your name field and app-owned meeting clock. Whiteboard OCR has been dropped;
+  the existing foundation route remains an unimplemented legacy placeholder.
+
 - PATCH includes `meetingId` as a query parameter because all four planned Cosmos
   containers use `/meetingId` as their partition key. The architecture left its
   location unspecified. Clients should use `api.updateSeed(meetingId, id, patch)`.
@@ -60,8 +66,6 @@ new objects and retain IDs when retrying.
   stay null; do not invent them. Typical cadence is 30 seconds of new transcript.
 - For a meeting transcript, `sourceId` identifies its meeting Source (fixtures use
   the meeting ID). `timestampSec` provides the link back to the spoken context.
-- Whiteboard uploads supply base64 image data. Their final owner must validate image
-  format/size and create the Source before saving extracted seeds.
 - Suggest targets 6–8 words and 3 phrases from roughly two minutes of context.
   Compose accepts user-spelled words too; it returns a preview and never triggers TTS.
 - Features always call the `GroveApi` interface. Browser mocks retain changes for that
@@ -111,8 +115,9 @@ Storage: Cosmos DB or explicit memory mode for seeds, roots, utterances and sour
 persisted roots.
 
 `/speech-token` exchanges the server-held Speech key for a 10-minute token
-(`Cache-Control: no-store`). The browser streams mic audio straight to Azure Speech
-with speaker diarization (`ConversationTranscriber`) and refreshes the token every 9 minutes.
+(`Cache-Control: no-store`). The browser captures the shared meeting tab and mic
+separately, streaming PCM to Azure Speech. Tab speech is diarized; mic speech uses
+the shared Your name value. Only short-lived tokens reach the browser.
 
 `/extract` saves the meeting Source and the request's utterances, asks Azure OpenAI
 (structured outputs) for commitments and decisions, then validates the result:
@@ -126,8 +131,17 @@ with speaker diarization (`ConversationTranscriber`) and refreshes the token eve
   preserved). New seed/root IDs are deterministic, so concurrent retries resolve to one.
 - Model failure → 502 with no seeds created. Missing OpenAI settings → 503 before saving.
 
-Browser mocks still provide deterministic per-utterance extraction (not AI) and reject
-Speech with 501. Leaves and whiteboard endpoints remain 501 integration points.
+Leaves suggestions read persisted meeting utterances from the shared repository,
+using the latest 120-second window, then request 6–8 words and 3 phrases from Azure
+OpenAI. Supplemental `recentText` is optional context, not a replacement for storage.
+Composition joins supplied tokens verbatim (maximum 20000 characters) and has no
+speech or persistence side effect. The Leaves client requires explicit confirmation,
+invalidates it on edits, and saves one stable-ID utterance with `via: "leaves"` when
+audio playback starts. Failed saves/extraction may be retried without replaying audio.
+
+Browser mocks provide deterministic per-utterance extraction (not AI) and reject
+Speech with 501. Real HTTP never falls back to fixtures. The whiteboard route is a
+legacy 501 placeholder; no OCR implementation or whiteboard demo is included.
 
 Azure OpenAI: use `api/shared/openai_client.py` (`complete_json` / `complete_text`) for any
 model call. It targets reasoning deployments such as gpt-5-mini: it sends `reasoning_effort`

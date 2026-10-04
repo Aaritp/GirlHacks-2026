@@ -1,0 +1,14 @@
+.leaves { max-width: 64rem; margin: 2rem auto; padding: 1.5rem; border: 2px solid #315844; border-radius: 1rem; background: #f5faf5; color: #183327; font: 1rem/1.5 system-ui, sans-serif; }
+.leaves h2 { font-size: 2rem; margin: 0; }
+.leaves label { display: block; font-weight: 600; margin: 1rem 0; }
+.leaves input, .leaves textarea { display: block; box-sizing: border-box; width: 100%; font: inherit; padding: .7rem; margin-top: .4rem; border: 1px solid #496e57; border-radius: .35rem; background: white; color: #183327; }
+.leaves button { min-height: 48px; min-width: 48px; padding: .65rem .9rem; font: inherit; color: #183327; background: white; border: 2px solid #496e57; border-radius: .5rem; cursor: pointer; }
+.leaves button:disabled { opacity: .5; cursor: default; }
+.leaves button:focus-visible, .leaves input:focus-visible, .leaves textarea:focus-visible { outline: 4px solid #835c00; outline-offset: 3px; }
+.leaves button[data-leaves-action="speak"]:enabled { background: #245a3b; color: white; }
+.leaves-choices, .leaves-keyboard { display: flex; flex-wrap: wrap; gap: .65rem; margin: 1rem 0; }
+.leaves-keyboard { max-width: 52rem; }
+.leaves [role="alert"] { color: #892d21; font-weight: 600; }
+.leaves-notice { background: #fff1c7; padding: .75rem; }
+.leaves-help, .leaves small { font-size: .9rem; }
+.leaves p + p { margin-top: .65rem; }
