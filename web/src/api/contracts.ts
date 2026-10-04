@@ -1,5 +1,5 @@
 import type {
-  ComposeRequest, ComposeResult, ExtractRequest, ExtractResult, Grove, Seed, SeedPatch,
+  AskRequest, AskResponse, ComposeRequest, ComposeResult, ExtractRequest, ExtractResult, Grove, Seed, SeedPatch,
   SpeechToken, SuggestRequest, Suggestions, Utterance, UtteranceList, WhiteboardRequest, WhiteboardResult,
 } from '../types';
 
@@ -13,6 +13,8 @@ export interface GroveApi {
   createSeed(seed: Seed): Promise<Seed>;
   updateSeed(meetingId: string, id: string, patch: SeedPatch): Promise<Seed>;
   getGrove(meetingId: string): Promise<Grove>;
+  /** Ask the Grove: a cited answer from stored seeds, sources and transcripts. */
+  ask(request: AskRequest): Promise<AskResponse>;
   readWhiteboard(request: WhiteboardRequest): Promise<WhiteboardResult>;
   suggest(request: SuggestRequest): Promise<Suggestions>;
   compose(request: ComposeRequest): Promise<ComposeResult>;

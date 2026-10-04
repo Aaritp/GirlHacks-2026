@@ -95,6 +95,35 @@ export interface Account {
 
 export interface Grove { seeds: Seed[]; roots: Root[] }
 export interface ExtractResult extends Grove { completions?: CompletionSuggestion[] }
+
+/** Ask the Grove. Scope to an account page with accountId; the live assistant adds meetingId + recentUtterances. */
+export interface AskRequest {
+  question: string;
+  accountId?: string | null;
+  meetingId?: string | null;
+  recentUtterances?: Utterance[];
+}
+/** Where an answer came from, built from stored records. Meetings jump to timestampSec. */
+export interface Citation {
+  sourceId: string;
+  sourceType: Seed['sourceType'];
+  meetingId: string;
+  accountId?: string | null;
+  seedId?: string | null;
+  title?: string | null;
+  quote: string;
+  timestampSec?: number | null;
+}
+export interface AskFilters {
+  accountIds: string[];
+  kinds: SeedKind[];
+  status: 'open' | 'done' | 'any';
+  dateFrom: string | null;
+  dateTo: string | null;
+  keywords: string[];
+}
+/** answered is false (with no citations) when the grove does not contain the answer. */
+export interface AskResponse { answer: string; answered: boolean; citations: Citation[]; filters: AskFilters }
 export interface SpeechToken { token: string; region: string }
 export interface ExtractRequest { meetingId: string; utterances: Utterance[]; accountId?: string | null }
 export interface UtteranceList { utterances: Utterance[] }

@@ -95,6 +95,24 @@ export function createMockApi(initial: Grove = demoGrove): GroveApi {
       return structuredClone(updated);
     },
     async getGrove(meetingId) { return grove(meetingId); },
+    async ask({ question, accountId = null, meetingId = null }) {
+      if (!question.trim()) throw new ApiError(400, 'INVALID_REQUEST', 'Ask a question.');
+      // Development behavior (not AI): seeds sharing a significant word with the question.
+      const terms = new Set(question.toLowerCase().match(/[a-z0-9]{4,}/g) ?? []);
+      const matches = [...seeds.values()].filter((seed) => (!accountId || seed.accountId === accountId)
+        && (!meetingId || accountId || seed.meetingId === meetingId)
+        && (`${seed.text} ${seed.quote ?? ''}`.toLowerCase().match(/[a-z0-9]{4,}/g) ?? []).some((word) => terms.has(word)));
+      const filters = { accountIds: accountId ? [accountId] : [], kinds: [], status: 'any' as const,
+        dateFrom: null, dateTo: null, keywords: [...terms] };
+      if (!matches.length) return { answer: "I don't have that in the grove.", answered: false, citations: [], filters };
+      return {
+        answer: `Mock answer (not AI): ${matches.length} matching seed(s): ${matches.map((seed) => seed.text).join('; ')}.`,
+        answered: true, filters,
+        citations: matches.map((seed) => ({ sourceId: seed.sourceId, sourceType: seed.sourceType, meetingId: seed.meetingId,
+          accountId: seed.accountId ?? null, seedId: seed.id, title: null, quote: seed.quote ?? seed.text,
+          timestampSec: seed.timestampSec })),
+      };
+    },
     async readWhiteboard() {
       throw new ApiError(501, 'NOT_IMPLEMENTED', 'Whiteboard OCR has not been connected.');
     },
