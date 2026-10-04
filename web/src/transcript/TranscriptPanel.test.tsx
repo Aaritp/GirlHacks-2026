@@ -7,6 +7,7 @@ import { TranscriptPanel } from './TranscriptPanel';
 
 // jsdom has no getDisplayMedia; pretend to be desktop Chrome and record what capture is started with.
 const started: OnlineCaptureOptions[] = [];
+const mute = vi.hoisted(() => vi.fn());
 vi.mock('./capture', async (original) => ({
   ...(await original<typeof import('./capture')>()),
   checkTabCaptureSupport: () => null,
@@ -15,7 +16,7 @@ vi.mock('./online', async (original) => ({
   ...(await original<typeof import('./online')>()),
   startOnlineCapture: vi.fn(async (_api: unknown, _callbacks: unknown, options: OnlineCaptureOptions) => {
     started.push(options);
-    return { stop: async () => undefined };
+    return { stop: async () => undefined, setMicrophoneMuted: mute };
   }),
 }));
 
@@ -24,6 +25,7 @@ const NOW = Date.parse('2026-10-03T13:10:00Z');
 
 beforeEach(() => {
   started.length = 0;
+  mute.mockClear();
   vi.spyOn(Date, 'now').mockReturnValue(NOW);
 });
 afterEach(() => { cleanup(); localStorage.clear(); vi.restoreAllMocks(); });
@@ -34,6 +36,18 @@ function seededApi() {
 }
 
 describe('TranscriptPanel', () => {
+  it('mutes meeting mic capture during an assistant question and restores it afterward', async () => {
+    const api = seededApi();
+    const view = render(<TranscriptPanel api={api} meetingId={MEETING} userName="Prisha" questionActive={false} />);
+    fireEvent.click(screen.getByRole('button', { name: /share meeting tab/i }));
+    await waitFor(() => expect(started).toHaveLength(1));
+    view.rerender(<TranscriptPanel api={api} meetingId={MEETING} userName="Prisha" questionActive />);
+    expect(mute).toHaveBeenLastCalledWith(true);
+    expect(started[0].isMicrophoneMuted?.()).toBe(true);
+    view.rerender(<TranscriptPanel api={api} meetingId={MEETING} userName="Prisha" questionActive={false} />);
+    expect(mute).toHaveBeenLastCalledWith(false);
+    expect(started[0].isMicrophoneMuted?.()).toBe(false);
+  });
   it('uses a shared name and clock from the app when given', async () => {
     const onUserNameChange = vi.fn();
     const startedAt = NOW - 90_000; // the app's meeting began 90 s ago

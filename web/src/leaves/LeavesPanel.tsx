@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { GroveApi } from '../api/contracts';
-import type { Seed, Suggestions } from '../types';
+import type { Seed, Suggestions, Utterance } from '../types';
 import { createLeavesSession, type LeavesSession, type LeavesSnapshot, type SpeechOutput } from './session';
 import { azureSpeechOutput } from './speech';
 import './leaves.css';
@@ -10,14 +10,15 @@ const INITIAL: LeavesSnapshot = { preview: '', confirmed: false, busy: false,
 interface Props {
   api: GroveApi; meetingId: string; accountId?: string | null; speaker: string; getStartSec: () => number;
   onSeeds?: (seeds: Seed[]) => void; speech?: SpeechOutput; mockMode?: boolean;
+  onUtteranceStarted?: (utterance: Utterance) => void;
 }
 
 /** Key this panel by meeting/speaker so unfinished drafts cannot move between people. */
 export function LeavesPanel({ api, meetingId, accountId, speaker, getStartSec, onSeeds,
-  speech, mockMode = false }: Props) {
+  speech, mockMode = false, onUtteranceStarted }: Props) {
   const session = useRef<LeavesSession | null>(null);
-  const callbacks = useRef({ getStartSec, onSeeds });
-  callbacks.current = { getStartSec, onSeeds };
+  const callbacks = useRef({ getStartSec, onSeeds, onUtteranceStarted });
+  callbacks.current = { getStartSec, onSeeds, onUtteranceStarted };
   const [state, setState] = useState(INITIAL);
   const [suggestions, setSuggestions] = useState<Suggestions>({ words: [], phrases: [] });
   const [suggestionError, setSuggestionError] = useState('');
@@ -34,6 +35,7 @@ export function LeavesPanel({ api, meetingId, accountId, speaker, getStartSec, o
       api, meetingId, accountId, speaker, speech: speech ?? azureSpeechOutput(api),
       getStartSec: () => callbacks.current.getStartSec(), onChange: setState,
       onSeeds: (seeds) => callbacks.current.onSeeds?.(seeds),
+      onUtteranceStarted: (utterance) => callbacks.current.onUtteranceStarted?.(utterance),
     });
     session.current = current;
     setState(current.snapshot());

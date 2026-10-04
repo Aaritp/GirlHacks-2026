@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { App } from '../App';
 import { startOnlineCapture } from '../transcript/online';
 
-const observed = vi.hoisted(() => ({ save: vi.fn(), extract: vi.fn() }));
+const observed = vi.hoisted(() => ({ save: vi.fn(), extract: vi.fn(), ask: vi.fn() }));
 vi.mock('../api/mocks', async (importOriginal) => {
   const original = await importOriginal<typeof import('../api/mocks')>();
   return { ...original, createMockApi: (...args: Parameters<typeof original.createMockApi>) => {
@@ -16,6 +16,9 @@ vi.mock('../api/mocks', async (importOriginal) => {
     }, extract: (request: Parameters<typeof api.extract>[0]) => {
       observed.extract(request);
       return api.extract(request);
+    }, ask: (request: Parameters<typeof api.ask>[0]) => {
+      observed.ask(request);
+      return api.ask(request);
     } };
   } };
 });
@@ -61,6 +64,11 @@ it('the integrated app saves Leaves into the visible forest and keeps forest con
   await screen.findByRole('button', { name: /I will validate Quetzal-Z88.*Planted.*Alex/i });
   await screen.findByText('Spoken contribution saved.');
   expect((screen.getByRole('button', { name: 'Speak confirmed preview' }) as HTMLButtonElement).disabled).toBe(true);
+  await user.type(screen.getByLabelText('Your question'), 'Quetzal-Z88');
+  await user.click(screen.getByRole('button', { name: 'Ask' }));
+  expect(observed.ask).toHaveBeenCalledWith(expect.objectContaining({
+    recentUtterances: expect.arrayContaining([expect.objectContaining({ via: 'leaves', text: 'I will validate Quetzal-Z88.' })]),
+  }));
 });
 
 it('the meeting query is shared by transcript and Leaves; custom meetings stay isolated', async () => {

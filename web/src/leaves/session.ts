@@ -26,6 +26,7 @@ export function createLeavesSession(options: {
   accountId?: string | null;
   getStartSec: () => number; onChange?: (state: LeavesSnapshot) => void;
   onSeeds?: (seeds: Seed[]) => void; newId?: () => string;
+  onUtteranceStarted?: (utterance: Utterance) => void;
 }) {
   let state: LeavesSnapshot = { preview: '', confirmed: false, busy: false,
     composing: false, pending: false, saving: false, message: '', error: '' };
@@ -131,7 +132,9 @@ export function createLeavesSession(options: {
           state.pending = true;
           state.message = 'Speaking. Saving your contribution…';
           notify();
+          const utterance = pending.utterance;
           void persist();
+          options.onUtteranceStarted?.(utterance);
         });
       } catch (reason) {
         if (!attempt.signal.aborted && !disposed) {

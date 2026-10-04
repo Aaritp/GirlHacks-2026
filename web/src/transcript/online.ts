@@ -23,6 +23,7 @@ export interface OnlineCaptureOptions {
   userName: string;
   baseSec?: number;
   language?: string;
+  isMicrophoneMuted?: () => boolean;
 }
 
 export interface OnlineCaptureDeps {
@@ -32,7 +33,7 @@ export interface OnlineCaptureDeps {
   startTranscriber?: typeof startPushTranscriber;
 }
 
-export interface OnlineCapture { stop(): Promise<void> }
+export interface OnlineCapture { stop(): Promise<void>; setMicrophoneMuted?(muted: boolean): void }
 
 /** Audio captured while Speech starts is held, up to this much per channel, then written. */
 const MAX_BUFFERED_SAMPLES = SPEECH_SAMPLE_RATE * 15;
@@ -54,7 +55,7 @@ export function endMessage(reason: SessionEndReason, detail?: string): string | 
  */
 export async function startOnlineCapture(
   api: Pick<GroveApi, 'getSpeechToken'>, callbacks: OnlineCaptureCallbacks,
-  { userName, baseSec = 0, language = 'en-US' }: OnlineCaptureOptions, deps: OnlineCaptureDeps = {},
+  { userName, baseSec = 0, language = 'en-US', isMicrophoneMuted = () => false }: OnlineCaptureOptions, deps: OnlineCaptureDeps = {},
 ): Promise<OnlineCapture> {
   const name = userName.trim();
   if (!name) throw new Error('Enter your name first so your own lines are labelled.');
@@ -64,6 +65,12 @@ export async function startOnlineCapture(
   } = deps;
 
   const streams = await acquire(env);
+  let microphoneMuted = isMicrophoneMuted();
+  const setMicrophoneMuted = (muted: boolean) => {
+    microphoneMuted = muted;
+    streams.mic.getAudioTracks().forEach((track) => { track.enabled = !muted; });
+  };
+  setMicrophoneMuted(microphoneMuted);
   const transcribers: Partial<Record<AudioChannel, PushTranscriber>> = {};
   const buffered: Record<AudioChannel, Int16Array[]> = { tab: [], mic: [] };
   const bufferedSamples: Record<AudioChannel, number> = { tab: 0, mic: 0 };
@@ -72,6 +79,9 @@ export async function startOnlineCapture(
   let started = false;
 
   const write = (channel: AudioChannel, pcm: Int16Array) => {
+    // Silence retains sample count/timestamps without sending question audio to the
+    // meeting recognizer, including while its credentials are still loading.
+    if (channel === 'mic' && (microphoneMuted || isMicrophoneMuted())) pcm = new Int16Array(pcm.length);
     const ready = transcribers[channel];
     if (started && ready) { ready.write(pcm); return; }
     const queue = buffered[channel];
@@ -135,5 +145,5 @@ export async function startOnlineCapture(
     throw reason;
   }
 
-  return { stop: () => end('stopped') };
+  return { stop: () => end('stopped'), setMicrophoneMuted };
 }

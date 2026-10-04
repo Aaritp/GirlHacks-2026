@@ -46,8 +46,8 @@ function harness({ failChannel }: { failChannel?: AudioChannel } = {}) {
     onPartial: vi.fn(), onFinal: vi.fn(), onWarning: vi.fn(),
     onEnded: vi.fn((reason) => { events.push(`ended:${reason}`); }),
   };
-  const start = (userName = USER) => {
-    const pending = startOnlineCapture(createMockApi(), callbacks, { userName }, deps);
+  const start = (userName = USER, isMicrophoneMuted = () => false) => {
+    const pending = startOnlineCapture(createMockApi(), callbacks, { userName, isMicrophoneMuted }, deps);
     const ready = () => vi.waitFor(() => expect(Object.keys(speech)).toHaveLength(2));
     return { pending, ready, release: async () => { await ready(); releaseStart(); return pending; } };
   };
@@ -55,6 +55,22 @@ function harness({ failChannel }: { failChannel?: AudioChannel } = {}) {
 }
 
 describe('startOnlineCapture', () => {
+  it('silences only the meeting mic during a question and preserves timestamps and tab audio', async () => {
+    const h = harness(); const capture = await h.start().release();
+    capture.setMicrophoneMuted!(true);
+    expect(h.media.streams.mic.getAudioTracks()[0].enabled).toBe(false);
+    h.emit('mic', Int16Array.of(40, 50)); h.emit('tab', Int16Array.of(60, 70));
+    expect(h.written.mic.at(-1)).toEqual([0, 0]); expect(h.written.tab.at(-1)).toEqual([60, 70]);
+    capture.setMicrophoneMuted!(false);
+    expect(h.media.streams.mic.getAudioTracks()[0].enabled).toBe(true);
+    h.emit('mic', Int16Array.of(80)); expect(h.written.mic.at(-1)).toEqual([80]);
+    await capture.stop();
+  });
+  it('never buffers question audio while the meeting recognizers are starting', async () => {
+    const h = harness(); const capture = await h.start(USER, () => true).release();
+    expect(h.written.mic).toEqual([[0]]); expect(h.written.tab).toEqual([[1]]);
+    await capture.stop();
+  });
   it('transcribes the mic under the user name and diarizes the tab', async () => {
     const h = harness();
     await h.start().release();
