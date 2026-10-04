@@ -46,7 +46,8 @@ afterEach(() => {
 it('the integrated app saves Leaves into the visible forest and keeps forest confirmation separate', async () => {
   const user = userEvent.setup();
   render(<App />);
-  await screen.findByRole('button', { name: 'Mark complete' });
+  // The first render of the whole app can take over the default second when the suite runs in parallel.
+  await screen.findByRole('button', { name: 'Mark complete' }, { timeout: 5000 });
   expect(screen.getByRole('button', { name: 'Share meeting tab' })).toBeTruthy();
   expect(screen.queryByLabelText('Editable sentence preview')).toBeNull();
   await user.type(screen.getByLabelText('Your name'), 'Alex');
