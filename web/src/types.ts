@@ -123,6 +123,9 @@ export interface AskFilters {
   keywords: string[];
 }
 /** answered is false (with no citations) when the grove does not contain the answer. */
+/** Development reset (POST /maintenance/clear-all). confirm must be exactly "CLEAR ALL". */
+export interface ClearAllRequest { confirm: string; keepAccounts?: boolean }
+export interface ClearAllResult { deleted: Record<string, number>; keptAccounts: boolean }
 export interface AskResponse { answer: string; answered: boolean; citations: Citation[]; filters: AskFilters }
 export interface SpeechToken { token: string; region: string }
 export interface ExtractRequest { meetingId: string; utterances: Utterance[]; accountId?: string | null }

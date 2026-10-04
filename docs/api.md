@@ -33,6 +33,7 @@ new objects and retain IDs when retrying.
 | POST | `/extract` | `{ meetingId, utterances: Utterance[], accountId? }` | `{ seeds, roots, completions }` |
 | GET | `/meetings/{meetingId}/utterances` | — | `{ utterances: Utterance[] }` ordered by `startSec` |
 | POST | `/ask` | `{ question, accountId?, meetingId?, recentUtterances? }` | `{ answer, answered, citations, filters }` |
+| POST | `/maintenance/clear-all` | `{ confirm: "CLEAR ALL", keepAccounts? }` | `{ deleted, keptAccounts }` |
 | GET | `/accounts` | — | `Account[]` sorted by name |
 | POST | `/accounts` | `Account` | Saved `Account` (201); 409 if the id exists |
 | GET | `/accounts/{id}/timeline` | — | `{ accountId, items: [{ source: Source, seeds: Seed[] }] }` newest first |
@@ -68,6 +69,14 @@ new objects and retain IDs when retrying.
   Compose accepts user-spelled words too; it returns a preview and never triggers TTS.
 - Features always call the `GroveApi` interface. Browser mocks retain changes for that
   instance only; reset by reloading. HTTP never silently falls back to mock success.
+
+## Clear all data (development)
+
+`POST /maintenance/clear-all` deletes every seed, root, utterance and source, including Slack
+sync records, and client accounts too when `keepAccounts` is false (default true). It returns
+403 `CLEAR_DISABLED` unless the server sets `GROVEKEEPER_ALLOW_CLEAR_ALL=true`, and 400 unless
+`confirm` is exactly `CLEAR ALL`. Never enable it on a shared or deployed environment. The
+meeting page's "Clear all data…" button calls it and reloads the page.
 
 ## Ask the Grove
 

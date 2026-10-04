@@ -42,6 +42,12 @@ class FakeContainer:
             raise CosmosResourceNotFoundError(status_code=404, message="Not found")
         return copy.deepcopy(self.items[(partition_key, item)])
 
+    def delete_item(self, item, partition_key):
+        self._check()
+        if (partition_key, item) not in self.items:
+            raise CosmosResourceNotFoundError(status_code=404, message="Not found")
+        del self.items[(partition_key, item)]
+
     def patch_item(self, item, partition_key, patch_operations):
         self._check()
         document = self.read_item(item, partition_key)

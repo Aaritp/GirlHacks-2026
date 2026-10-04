@@ -10,6 +10,7 @@ import { IngestPanel } from './ingest/IngestPanel';
 import { createIngestApi } from './ingest/api';
 import { createMockIngestApi } from './ingest/mocks';
 import { AskBox, MeetingAssistant } from './ask';
+import { ClearAllButton } from './maintenance/ClearAllButton';
 import type { Utterance } from './types';
 
 // One API instance for every feature, so extracted seeds land in the grove the forest shows.
@@ -34,6 +35,7 @@ function MeetingGrove({ meetingId: initialMeetingId, accountId }: { meetingId: s
       <nav aria-label="Workspaces" style={{ padding: 12, display: 'flex', gap: 12 }}>
         <button type="button" aria-pressed={view === 'forest'} onClick={() => setView('forest')}>Grove</button>
         <button type="button" aria-pressed={view === 'ingest'} onClick={() => setView('ingest')}>Add to grove</button>
+        <span style={{ marginLeft: 'auto' }}><ClearAllButton api={groveApi} mockMode={usingMocks} /></span>
       </nav>
       {view === 'ingest' ? <IngestPanel api={ingestApi} mock={usingMocks} onOpenGrove={(id, accountTitle) => {
         setAccountGrove({ id, title: accountTitle }); reloadGrove(); setView('forest');

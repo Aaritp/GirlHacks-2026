@@ -95,6 +95,14 @@ export function createMockApi(initial: Grove = demoGrove): GroveApi {
       return structuredClone(updated);
     },
     async getGrove(meetingId) { return grove(meetingId); },
+    async clearAll({ confirm, keepAccounts = true }) {
+      if (confirm !== 'CLEAR ALL') throw new ApiError(400, 'INVALID_REQUEST', 'Type CLEAR ALL exactly to confirm.');
+      const deleted = { seeds: seeds.size, roots: roots.length, utterances: utterances.size };
+      seeds.clear();
+      roots.length = 0;
+      utterances.clear();
+      return { deleted, keptAccounts: keepAccounts };
+    },
     async ask({ question, accountId = null, meetingId = null }) {
       if (!question.trim()) throw new ApiError(400, 'INVALID_REQUEST', 'Ask a question.');
       // Development behavior (not AI): seeds sharing a significant word with the question.

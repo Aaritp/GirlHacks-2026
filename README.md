@@ -88,6 +88,14 @@ through `/api/ingest` (one Azure OpenAI extraction per new source). Dates are re
 day. Re-running is safe: existing accounts and sources are reused, not duplicated. To start from a
 clean slate, delete the `grovekeeper` database in Cosmos Data Explorer; it is recreated on first use.
 
+## Clearing test data
+
+To remove test transcripts and seeds, add `"GROVEKEEPER_ALLOW_CLEAR_ALL": "true"` to
+`api/local.settings.json`, restart `func start`, then use **Clear all data…** in the meeting
+page's top bar (type `CLEAR ALL` to confirm). Client accounts are kept unless you tick the box;
+rerun `python3 scripts/seed_demo_data.py` afterwards to restore the demo data. If teammates
+share the same Cosmos account, it clears their data too.
+
 ## Ownership and branches
 
 Main includes the account backend,

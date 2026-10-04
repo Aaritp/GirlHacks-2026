@@ -152,6 +152,23 @@ class CosmosStore:
     def list_account_seeds(self, account_id: str):
         return self._query_all("seeds", Seed, account_id)
 
+    def clear_all(self, keep_accounts: bool = True):
+        # Item by item, so containers, partitioning and shared throughput stay as they are.
+        counts = {}
+        for name, container in self.containers.items():
+            if name == ACCOUNTS and keep_accounts:
+                continue
+            field = "id" if name == ACCOUNTS else "meetingId"
+            documents = self._call(lambda: list(container.query_items(
+                query="SELECT * FROM c", enable_cross_partition_query=True)))
+            for document in documents:
+                try:
+                    self._call(container.delete_item, item=document["id"], partition_key=document[field])
+                except CosmosResourceNotFoundError:
+                    pass  # already gone (e.g. deleted concurrently)
+            counts[name] = len(documents)
+        return counts
+
 
 DEFAULT_DATABASE_THROUGHPUT = 1000
 
