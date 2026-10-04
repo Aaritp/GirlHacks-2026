@@ -14,7 +14,7 @@ interface Props {
   /** Client account this meeting belongs to (e.g. from `?accountId=`). Its seeds then appear on that account. */
   accountId?: string | null;
   /**
-   * App-owned meeting start (ms since epoch), shared with other features (e.g. Whispering Leaves)
+   * App-owned meeting start (ms since epoch), shared with other features (e.g. the meeting assistant)
    * so every utterance uses one timeline. Without it the panel keeps its own clock.
    */
   meetingStartedAt?: number;

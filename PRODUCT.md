@@ -9,8 +9,7 @@ web
 ## Users
 
 Client-account teams tracking commitments and decisions across online meetings,
-Slack, and pasted or uploaded email/chat/documents. Whispering Leaves supports
-participants composing speech with mouse and keyboard.
+Slack, and pasted or uploaded email/chat/documents.
 
 ## Product Purpose
 
@@ -21,16 +20,16 @@ Participants review owners, deadlines, source context, progress, and health.
 
 React/Vite/TypeScript browser app with Azure Functions and shared storage owned by
 Person A. Person C owns forest UI and seed health; Person D owns
-Whispering Leaves. Person A's shared backend supports Cosmos and explicit local memory.
+the Ask the Grove UI and live meeting assistant. Whispering Leaves was removed. Person A's shared backend supports Cosmos and explicit local memory.
 Person B now owns ingestion and Slack. The input-tracking branch is not part of the
 new product. Shared account types/storage and the account dashboard are integrated;
 meeting partitions remain the storage key.
 
 ## Capabilities and Constraints
 
-Leaves uses native mouse/keyboard controls. Hand/head tracking and in-person
+Hand/head tracking and in-person
 capture are cut. Online capture uses a shared Zoom/Meet/Teams tab and captures the
-user's microphone separately. Transcript and Leaves share one name and meeting clock. Slack is the
+user's microphone separately. The app owns one display name and meeting clock. Slack is the
 only live content connector; email/chat/docs arrive by paste or upload.
 Source provenance is immutable. Speech requires explicit confirmation.
 The meeting grove uses its existing inactivity health rule. The account dashboard

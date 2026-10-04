@@ -40,16 +40,12 @@ new objects and retain IDs when retrying.
 | PATCH | `/seeds/{id}?meetingId=...` | `SeedPatch` | Updated `Seed` |
 | GET | `/meetings/{meetingId}/grove` | — | `{ seeds, roots }` |
 | POST | `/whiteboard` | `{ meetingId, imageBase64 }` | `{ text, seeds }` |
-| POST | `/leaves/suggest` | `{ meetingId, recentText }` | `{ words, phrases }` |
-| POST | `/leaves/compose` | `{ meetingId, picked: string[] }` | `{ sentence }` |
 
 ## Decisions clarified for integration
 
-- The shared account backend and dashboard are integrated. Leaves uses the existing
-  meeting repository and scopes suggestions to the selected meeting.
-- Leaves uses native mouse/keyboard controls and shares the transcript panel's
-  Your name field and app-owned meeting clock. Whiteboard OCR has been dropped;
-  the existing foundation route remains an unimplemented legacy placeholder.
+- The shared account backend and dashboard are integrated. Whispering Leaves (suggest/compose)
+  has been removed; stored `via: "leaves"` utterances and `sourceType: "leaves"` seeds still load.
+  Whiteboard OCR has been dropped; the foundation route remains a legacy 501 placeholder.
 
 - PATCH includes `meetingId` as a query parameter because all four planned Cosmos
   containers use `/meetingId` as their partition key. The architecture left its
@@ -163,14 +159,6 @@ the shared Your name value. Only short-lived tokens reach the browser.
   preserved). New seed/root IDs are deterministic, so concurrent retries resolve to one.
 - Model failure → 502 with no seeds created. Missing OpenAI settings → 503 before saving.
 
-Leaves suggestions read persisted meeting utterances from the shared repository,
-using the latest 120-second window, then request 6–8 words and 3 phrases from Azure
-OpenAI. Supplemental `recentText` is optional context, not a replacement for storage.
-Composition joins supplied tokens verbatim (maximum 20000 characters) and has no
-speech or persistence side effect. The Leaves client requires explicit confirmation,
-invalidates it on edits, and saves one stable-ID utterance with `via: "leaves"` when
-audio playback starts. Failed saves/extraction may be retried without replaying audio.
-
 Browser mocks provide deterministic per-utterance extraction (not AI) and reject
 Speech with 501. Real HTTP never falls back to fixtures. The whiteboard route is a
 legacy 501 placeholder; no OCR implementation or whiteboard demo is included.
@@ -178,7 +166,7 @@ legacy 501 placeholder; no OCR implementation or whiteboard demo is included.
 Azure OpenAI: use `api/shared/openai_client.py` (`complete_json` / `complete_text`) for any
 model call. It targets reasoning deployments such as gpt-5-mini: it sends `reasoning_effort`
 and optional `max_completion_tokens`, and never `temperature`, `top_p` or `max_tokens`.
-Extraction uses effort `low`; Whispering Leaves should use `minimal`.
+Extraction and Ask the Grove use effort `low`.
 
 Azure SDK request logging is limited to warnings (`GROVEKEEPER_SDK_LOG_LEVEL=INFO` restores it).
 

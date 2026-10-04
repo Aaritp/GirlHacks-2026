@@ -1,6 +1,6 @@
 import type { CompletionSuggestion, Grove, Seed, Utterance } from '../types';
 import { ApiError, type GroveApi } from './contracts';
-import { demoGrove, demoSuggestions } from './fixtures';
+import { demoGrove } from './fixtures';
 
 /** Per-instance, in-memory state. No AI, audio, OCR, or external requests. */
 export function createMockApi(initial: Grove = demoGrove): GroveApi {
@@ -115,14 +115,6 @@ export function createMockApi(initial: Grove = demoGrove): GroveApi {
     },
     async readWhiteboard() {
       throw new ApiError(501, 'NOT_IMPLEMENTED', 'Whiteboard OCR has not been connected.');
-    },
-    async suggest() { return structuredClone(demoSuggestions); },
-    async compose({ picked }) {
-      if (!picked.length || picked.length > 200 || picked.some((word) => !word.trim())) {
-        throw new ApiError(400, 'INVALID_REQUEST', 'Pick or spell at least one non-empty word.');
-      }
-      // Return a preview only. Never invoke speech from this API.
-      return { sentence: picked.join(' ') };
     },
   };
 }

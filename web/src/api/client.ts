@@ -31,7 +31,5 @@ export function createHttpApi(baseUrl = '/api', fetcher: typeof fetch = fetch): 
     ask: (body) => request('/ask', 'POST', body),
     getGrove: (meetingId) => request(`/meetings/${encodeURIComponent(meetingId)}/grove`),
     readWhiteboard: (body) => request('/whiteboard', 'POST', body),
-    suggest: (body) => request('/leaves/suggest', 'POST', body),
-    compose: (body) => request('/leaves/compose', 'POST', body),
   };
 }
