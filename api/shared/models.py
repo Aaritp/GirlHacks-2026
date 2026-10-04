@@ -6,6 +6,12 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validato
 
 Identifier = Annotated[str, Field(min_length=1, max_length=128, pattern=r"^[^/\\?#]+$")]
 Text = Annotated[str, Field(min_length=1, max_length=20000)]
+SeedKind = Literal["commitment", "decision", "risk", "customer_need"]
+SourceType = Literal["meeting", "whiteboard", "email", "chat", "document", "slack"]
+# Sources whose body is stored on the Source and extracted with POST /extract/source.
+TEXT_SOURCE_TYPES = ("email", "chat", "document", "slack")
+MAX_SOURCE_TEXT = 100_000
+MAX_QUOTE = 2000
 
 
 class WireModel(BaseModel):
@@ -18,21 +24,25 @@ class Seed(WireModel):
     text: Text
     owner: str | None
     deadline: date | None
-    kind: Literal["commitment", "decision"]
+    kind: SeedKind
     status: Literal["seed", "sprout", "bloom", "wilted"]
     health: float = Field(ge=0, le=1)
-    sourceType: Literal["meeting", "whiteboard", "leaves"]
+    sourceType: Literal["meeting", "whiteboard", "email", "chat", "document", "slack", "leaves"]
     sourceId: Identifier
     timestampSec: float | None = Field(ge=0)
     lastActivity: AwareDatetime
     size: float = Field(gt=0)
+    # Optional so seeds stored before accounts existed still load. Immutable provenance.
+    accountId: Identifier | None = None
+    # The exact source words the seed was extracted from; null when none was recorded.
+    quote: str | None = Field(default=None, max_length=MAX_QUOTE)
 
 
 class SeedPatch(WireModel):
     text: Text | None = None
     owner: str | None = None
     deadline: date | None = None
-    kind: Literal["commitment", "decision"] | None = None
+    kind: SeedKind | None = None
     status: Literal["seed", "sprout", "bloom", "wilted"] | None = None
     health: float | None = Field(default=None, ge=0, le=1)
     lastActivity: AwareDatetime | None = None
@@ -66,12 +76,34 @@ class Utterance(WireModel):
 
 
 class Source(WireModel):
+    # Non-meeting sources use their own id as meetingId, so every record keeps one partition key.
     id: Identifier
     meetingId: Identifier
-    type: Literal["meeting", "whiteboard"]
+    type: SourceType
     title: Text
     blobUrl: str | None = None
     createdAt: AwareDatetime
+    accountId: Identifier | None = None
+    # Body of an email, chat, document or Slack thread. Null for meetings (stored as utterances).
+    text: str | None = Field(default=None, max_length=MAX_SOURCE_TEXT)
+
+
+class AccountContact(WireModel):
+    name: Text
+    role: str | None = None
+    email: str | None = None
+
+
+class Account(WireModel):
+    id: Identifier
+    name: Text
+    aliases: list[Text] = Field(default_factory=list, max_length=50)
+    industry: str = ""
+    contacts: list[AccountContact] = Field(default_factory=list, max_length=200)
+
+
+class UtteranceList(WireModel):
+    utterances: list[Utterance]
 
 
 class Grove(WireModel):
@@ -82,11 +114,26 @@ class Grove(WireModel):
 class ExtractRequest(WireModel):
     meetingId: Identifier
     utterances: list[Utterance] = Field(min_length=1, max_length=200)
+    # Links the meeting to a client account; its seeds then carry accountId.
+    accountId: Identifier | None = None
 
     @model_validator(mode="after")
     def same_meeting(self):
         if any(item.meetingId != self.meetingId for item in self.utterances):
             raise ValueError("All utterances must belong to the requested meeting")
+        return self
+
+
+class ExtractSourceRequest(WireModel):
+    """An email, chat, document or Slack thread to save and extract (Person B's ingestion)."""
+    source: Source
+
+    @model_validator(mode="after")
+    def text_source(self):
+        if self.source.type not in TEXT_SOURCE_TYPES:
+            raise ValueError("Use /extract for meetings and /whiteboard for whiteboards")
+        if not self.source.text or not self.source.text.strip():
+            raise ValueError("Source text is required")
         return self
 
 

@@ -11,7 +11,11 @@ new objects and retain IDs when retrying.
 | GET | `/health` | — | `{ status, service, stage }` |
 | POST | `/speech-token` | — | `{ token, region }` |
 | POST | `/utterances` | `Utterance` | Saved `Utterance` |
-| POST | `/extract` | `{ meetingId, utterances: Utterance[] }` | `{ seeds: Seed[], roots: Root[] }` |
+| POST | `/extract` | `{ meetingId, utterances: Utterance[], accountId? }` | `{ seeds: Seed[], roots: Root[] }` |
+| POST | `/extract/source` | `{ source: Source }` (email, chat, document, slack; `text` required) | `{ seeds: Seed[], roots: Root[] }` |
+| GET | `/meetings/{meetingId}/utterances` | — | `{ utterances: Utterance[] }` ordered by `startSec` |
+| GET | `/accounts` | — | `Account[]` sorted by name |
+| POST | `/accounts` | `Account` | Saved `Account` (201); 409 if the id exists |
 | POST | `/seeds` | `Seed` | Saved `Seed` (201) |
 | PATCH | `/seeds/{id}?meetingId=...` | `SeedPatch` | Updated `Seed` |
 | GET | `/meetings/{meetingId}/grove` | — | `{ seeds, roots }` |
@@ -44,6 +48,25 @@ new objects and retain IDs when retrying.
   Compose accepts user-spelled words too; it returns a preview and never triggers TTS.
 - Features always call the `GroveApi` interface. Browser mocks retain changes for that
   instance only; reset by reloading. HTTP never silently falls back to mock success.
+
+## Accounts and text sources
+
+- Seed kinds: `commitment`, `decision`, `risk`, `customer_need`. Source types: `meeting`,
+  `whiteboard`, `email`, `chat`, `document`, `slack`. Seeds may also be `leaves`.
+- `Seed.accountId` and `Seed.quote`, and `Source.accountId` and `Source.text`, are optional and
+  null when absent, so data stored before accounts still loads. `quote` is the exact source
+  wording: for meetings, the cited utterances; for text sources, a span verified verbatim in
+  `Source.text`. Items whose quote is not in the source are dropped, never saved.
+- Non-meeting sources use their own id as `meetingId`, so `PATCH /seeds/{id}?meetingId=` works
+  unchanged for every seed. Their seeds have `timestampSec: null`.
+- `/extract` with `accountId` links the meeting's Source to that account on first use; later
+  windows inherit it. A different `accountId` for an already-linked meeting → 409 `CONFLICT`.
+- `/extract/source` saves the Source, then extracts. Re-sending the same source returns the
+  same seeds; the same id with different text/account/type → 409 `CONFLICT`. Model failure →
+  502 with no seeds. Meeting text is never echoed in errors.
+- `GET /meetings/{id}/utterances` returns an empty list for an unknown meeting (not 404).
+- The account timeline (`GET /accounts/{id}/timeline`) lives on `feat/account-dashboard`; register
+  it with `create_timeline_blueprint(get_store)` once that branch and this one are merged.
 
 ## Errors
 
