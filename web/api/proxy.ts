@@ -1,6 +1,8 @@
 /**
  * Vercel serverless proxy: forwards /api/* from the browser to the Azure Functions backend and
  * adds the Functions key on the server, so the key is never shipped to the browser.
+ * vercel.json rewrites every /api/<path> to /api/proxy?__path=<path>, because a catch-all
+ * function file does not match multi-segment paths outside Next.js.
  *
  * Vercel environment variables (server-side only, never VITE_*):
  *   GROVEKEEPER_API_ORIGIN  e.g. https://grovekeeper-api.azurewebsites.net  (no trailing /api)
@@ -23,7 +25,11 @@ async function proxy(request: Request): Promise<Response> {
     return errorResponse(503, 'PROXY_NOT_CONFIGURED', 'The API proxy is missing GROVEKEEPER_API_ORIGIN or GROVEKEEPER_API_KEY.');
   }
   const incoming = new URL(request.url);
-  if (!incoming.pathname.startsWith('/api/')) return errorResponse(404, 'NOT_FOUND', 'Not found.');
+  const rewritten = incoming.searchParams.get('__path');
+  incoming.searchParams.delete('__path');
+  const pathname = rewritten !== null ? `/api/${rewritten.replace(/^\/+/, '')}` : incoming.pathname;
+  if (!pathname.startsWith('/api/') || pathname === '/api/proxy') return errorResponse(404, 'NOT_FOUND', 'Not found.');
+  const search = incoming.searchParams.toString();
 
   const headers = new Headers({ 'x-functions-key': key });
   for (const name of FORWARDED_REQUEST_HEADERS) {
@@ -32,7 +38,7 @@ async function proxy(request: Request): Promise<Response> {
   }
   const hasBody = !['GET', 'HEAD'].includes(request.method);
   try {
-    const upstream = await fetch(`${origin}${incoming.pathname}${incoming.search}`, {
+    const upstream = await fetch(`${origin}${pathname}${search ? `?${search}` : ''}`, {
       method: request.method, headers, body: hasBody ? await request.arrayBuffer() : undefined,
     });
     const responseHeaders = new Headers();
