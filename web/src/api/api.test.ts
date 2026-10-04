@@ -84,7 +84,7 @@ describe('HTTP API', () => {
   });
 });
 
-describe('transcript and source extraction endpoints', () => {
+describe('meeting transcript endpoint and account extraction', () => {
   it('mock returns a meeting transcript in order, isolated by meeting', async () => {
     const api = createMockApi({ seeds: [], roots: [] });
     await api.saveUtterance({ ...demoUtterances[1] });
@@ -94,22 +94,15 @@ describe('transcript and source extraction endpoints', () => {
     expect(await api.getUtterances('nobody')).toEqual({ utterances: [] });
   });
 
-  it('mock extraction carries the account and quote, and text extraction refuses to fake AI', async () => {
+  it('mock extraction carries the account and quote', async () => {
     const api = createMockApi({ seeds: [], roots: [] });
     const { seeds } = await api.extract({ meetingId: DEMO_MEETING_ID, utterances: demoUtterances, accountId: 'acct-1' });
     expect(seeds.every((seed) => seed.accountId === 'acct-1' && seed.quote)).toBe(true);
-    await expect(api.extractSource({ source: { id: 's', meetingId: 's', type: 'email', title: 'Hi',
-      createdAt: '2026-10-03T13:00:00Z', text: 'Hello' } })).rejects.toMatchObject({ status: 501 });
   });
 
-  it('HTTP client calls the new routes with encoded IDs', async () => {
+  it('HTTP client requests a meeting transcript with an encoded ID', async () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(Response.json({ utterances: [] }));
-    const api = createHttpApi('/api', fetcher);
-    await api.getUtterances('meeting & two');
+    await createHttpApi('/api', fetcher).getUtterances('meeting & two');
     expect(fetcher.mock.calls[0][0]).toBe('/api/meetings/meeting%20%26%20two/utterances');
-    fetcher.mockResolvedValue(Response.json({ seeds: [], roots: [] }));
-    await api.extractSource({ source: { id: 's', meetingId: 's', type: 'slack', title: '#x', createdAt: 'z', text: 't' } });
-    expect(fetcher.mock.calls[1][0]).toBe('/api/extract/source');
-    expect(fetcher.mock.calls[1][1]).toMatchObject({ method: 'POST' });
   });
 });

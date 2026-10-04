@@ -5,7 +5,7 @@ import pytest
 
 from conftest import function_handlers
 from extract import model
-from extract.pipeline import SourceConflict, extract_and_save, extract_source_and_save
+from extract.pipeline import SourceConflict, extract_and_save
 from fake_cosmos import FakeDatabase
 from shared.cosmos import CosmosStore
 from shared.models import Account, Seed, Source, Utterance
@@ -152,93 +152,66 @@ def test_meeting_extract_route_maps_account_conflict_to_409(backend, openai_env)
     assert (conflict.status_code, body(conflict)["error"]["code"]) == (409, "CONFLICT")
 
 
-# --- source extraction -----------------------------------------------------------------
+# --- text sources (email, chat, document, Slack via api/ingest) ----------------------------
 
-SOURCE_ITEMS = [
-    item("blocked", "risk", "Testers blocked on sandbox credentials",
-         "the sandbox credentials still have not arrived and our testers are blocked"),
-    item("quebec", "customer_need", "Bilingual pay statements for Quebec",
-         "We also need bilingual pay statements for Quebec"),
-    item("send", "commitment", "Send sandbox credentials", "the sandbox credentials still have not arrived",
-         owner="Alex", deadline="2026-10-02", evidence="past Friday", depends=["blocked"]),
+def chunks(source, texts, authors=None):
+    """How ingestion feeds a text source: one utterance-shaped chunk per message."""
+    authors = authors or ["Dana"] * len(texts)
+    return [Utterance(id=f"chunk-{i}", meetingId=source.meetingId, speaker=author, text=text, startSec=i, via="voice")
+            for i, (author, text) in enumerate(zip(authors, texts))]
+
+
+EMAIL_CHUNKS = ["Hi Alex, the sandbox credentials still have not arrived and our testers are blocked.",
+                "If this slips past Friday we will miss the pilot window. We also need bilingual pay statements."]
+TEXT_ITEMS = [
+    {"key": "blocked", "kind": "risk", "text": "Testers blocked on sandbox credentials", "owner": None,
+     "deadline": None, "deadlineEvidence": None, "utteranceIds": ["chunk-0"], "dependsOn": []},
+    {"key": "quebec", "kind": "customer_need", "text": "Bilingual pay statements", "owner": None,
+     "deadline": None, "deadlineEvidence": None, "utteranceIds": ["chunk-1"], "dependsOn": ["blocked"]},
+    {"key": "send", "kind": "commitment", "text": "Send sandbox credentials", "owner": "Alex",
+     "deadline": "2026-10-02", "deadlineEvidence": "next Tuesday", "utteranceIds": ["chunk-0"], "dependsOn": []},
 ]
 
 
-def test_source_extraction_saves_source_and_traceable_seeds(backend):
-    result = extract_source_and_save(backend, email(), lambda payload: SOURCE_ITEMS)
-    assert [s.kind for s in result.seeds] == ["risk", "customer_need", "commitment"]
-    seed = result.seeds[2]
-    assert (seed.meetingId, seed.sourceId, seed.sourceType, seed.accountId) == (
-        "src-nw-email", "src-nw-email", "email", ACCOUNT.id)
-    assert seed.timestampSec is None
-    assert (seed.owner, seed.deadline.isoformat()) == ("Alex", "2026-10-02")
-    assert seed.lastActivity.isoformat() == "2026-09-28T13:00:00+00:00"
-    assert result.roots[0].toSeedId == result.seeds[0].id
-    assert backend.get_source("src-nw-email", "src-nw-email").text == EMAIL_TEXT
-    assert len(backend.list_account_seeds(ACCOUNT.id)) == 3
+def test_text_source_seeds_point_at_the_source_and_chunks_are_not_saved(backend):
+    source = email()
+    result = extract_and_save(backend, source.meetingId, chunks(source, EMAIL_CHUNKS), lambda w: TEXT_ITEMS,
+                              source=source)
+    risk, need, send = result.seeds
+    assert (risk.sourceType, risk.sourceId, risk.meetingId, risk.accountId, risk.timestampSec) == (
+        "email", "src-nw-email", "src-nw-email", ACCOUNT.id, None)
+    assert risk.quote == EMAIL_CHUNKS[0] and need.kind == "customer_need"
+    # Alex is named in the cited text; the deadline evidence is not, so it stays null.
+    assert (send.owner, send.deadline) == ("Alex", None)
+    assert result.roots[0].fromSeedId == need.id and result.roots[0].toSeedId == risk.id
+    assert backend.list_utterances(source.meetingId) == []
+    assert backend.get_source(source.meetingId, source.id).text == EMAIL_TEXT
 
 
-def test_source_extraction_never_invents_quotes_owners_or_deadlines(backend):
-    items = [
-        item("fake", "risk", "Customer threatened to cancel", "we will cancel the contract"),
-        item("guess", "commitment", "Fix the testers' access", "our testers are blocked", owner="Priya",
-             deadline="2026-10-09", evidence="next Thursday"),
-        item("bad-kind", "rumor", "Something", "Dana"),
-    ]
-    seeds = extract_source_and_save(backend, email(), lambda payload: items).seeds
-    assert [s.text for s in seeds] == ["Fix the testers' access"]
-    assert (seeds[0].owner, seeds[0].deadline) == (None, None)
+def test_text_sources_sharing_a_partition_deduplicate_separately(backend):
+    first = email(id="email-1", meetingId="account-nw")
+    second = email(id="email-2", meetingId="account-nw")
+    items = TEXT_ITEMS[:1]
+    a = extract_and_save(backend, "account-nw", chunks(first, EMAIL_CHUNKS), lambda w: items, source=first)
+    again = extract_and_save(backend, "account-nw", chunks(first, EMAIL_CHUNKS), lambda w: items, source=first)
+    b = extract_and_save(backend, "account-nw", chunks(second, EMAIL_CHUNKS), lambda w: items, source=second)
+    assert again.seeds[0].id == a.seeds[0].id
+    assert b.seeds[0].id != a.seeds[0].id and b.seeds[0].sourceId == "email-2"
+    assert len(backend.list_seeds("account-nw")) == 2
 
 
-def test_reingesting_the_same_source_is_idempotent(backend):
-    first = extract_source_and_save(backend, email(), lambda payload: SOURCE_ITEMS)
-    reworded = [dict(SOURCE_ITEMS[0], text="Sandbox access is blocking testing")] + SOURCE_ITEMS[1:]
-    second = extract_source_and_save(backend, email(), lambda payload: reworded)
-    assert [s.id for s in second.seeds] == [s.id for s in first.seeds]
-    assert len(backend.list_seeds("src-nw-email")) == 3
-
-
-def test_source_with_same_id_but_different_content_is_a_conflict(backend):
-    extract_source_and_save(backend, email(), lambda payload: [])
+def test_text_source_rules(backend):
+    source = email()
+    evidence = chunks(source, EMAIL_CHUNKS)
+    with pytest.raises(ValueError):
+        extract_and_save(backend, "other-partition", evidence, lambda w: [], source=source)
+    with pytest.raises(ValueError):
+        meeting = Source(id="m", meetingId="src-nw-email", type="meeting", title="M", createdAt="2026-10-03T13:00:00Z")
+        extract_and_save(backend, "src-nw-email", evidence, lambda w: [], source=meeting)
     with pytest.raises(SourceConflict):
-        extract_source_and_save(backend, email(text="Completely different email."), lambda payload: [])
+        extract_and_save(backend, source.meetingId, evidence, lambda w: [], account_id="acct-harbor", source=source)
+    assert backend.list_seeds(source.meetingId) == []
 
 
-def test_source_route_validation_and_failures(backend, openai_env):
-    openai_env.setattr(model, "call_source_model", lambda payload: SOURCE_ITEMS[:1])
-    ok = HANDLERS["extract_source"](http({"source": email().model_dump(mode="json")}))
-    assert ok.status_code == 200 and body(ok)["seeds"][0]["quote"].startswith("the sandbox credentials")
-    meeting = email(type="meeting").model_dump(mode="json")
-    assert HANDLERS["extract_source"](http({"source": meeting})).status_code == 400
-    assert HANDLERS["extract_source"](http({"source": email(text="  ").model_dump(mode="json")})).status_code == 400
-    clash = HANDLERS["extract_source"](http({"source": email(text="Other").model_dump(mode="json")}))
-    assert clash.status_code == 409
-
-    def failing(payload):
-        raise model.ModelFailed("timeout")
-    openai_env.setattr(model, "call_source_model", failing)
-    other = email(id="src-2", meetingId="src-2")
-    failed = HANDLERS["extract_source"](http({"source": other.model_dump(mode="json")}))
-    assert (failed.status_code, body(failed)["error"]["code"]) == (502, "UPSTREAM_ERROR")
-    assert backend.list_seeds("src-2") == []
-
-
-def test_source_model_prompt_is_sent_with_reasoning_parameters(openai_env):
-    import openai
-    from types import SimpleNamespace
-    sent = {}
-
-    class FakeClient:
-        def __init__(self, **kwargs):
-            def create(**options):
-                sent.update(options)
-                message = SimpleNamespace(content=json.dumps({"items": []}))
-                return SimpleNamespace(choices=[SimpleNamespace(finish_reason="stop", message=message)])
-            self.chat = SimpleNamespace(completions=SimpleNamespace(create=create))
-
-    openai_env.setattr(openai, "OpenAI", FakeClient)
-    assert model.call_source_model({"text": "hi"}) == []
-    assert sent["reasoning_effort"] == "low"
-    assert sent["response_format"]["json_schema"]["name"] == "source_extraction"
-    kinds = sent["response_format"]["json_schema"]["schema"]["properties"]["items"]["items"]["properties"]["kind"]["enum"]
-    assert kinds == ["commitment", "decision", "risk", "customer_need"]
+def test_extract_source_route_is_gone():
+    assert "extract_source" not in HANDLERS

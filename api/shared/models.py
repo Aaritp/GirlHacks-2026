@@ -8,7 +8,7 @@ Identifier = Annotated[str, Field(min_length=1, max_length=128, pattern=r"^[^/\\
 Text = Annotated[str, Field(min_length=1, max_length=20000)]
 SeedKind = Literal["commitment", "decision", "risk", "customer_need"]
 SourceType = Literal["meeting", "whiteboard", "email", "chat", "document", "slack"]
-# Sources whose body is stored on the Source and extracted with POST /extract/source.
+# Sources whose body is stored on the Source (ingested via api/ingest), not as utterances.
 TEXT_SOURCE_TYPES = ("email", "chat", "document", "slack")
 MAX_SOURCE_TEXT = 100_000
 MAX_QUOTE = 2000
@@ -121,19 +121,6 @@ class ExtractRequest(WireModel):
     def same_meeting(self):
         if any(item.meetingId != self.meetingId for item in self.utterances):
             raise ValueError("All utterances must belong to the requested meeting")
-        return self
-
-
-class ExtractSourceRequest(WireModel):
-    """An email, chat, document or Slack thread to save and extract (Person B's ingestion)."""
-    source: Source
-
-    @model_validator(mode="after")
-    def text_source(self):
-        if self.source.type not in TEXT_SOURCE_TYPES:
-            raise ValueError("Use /extract for meetings and /whiteboard for whiteboards")
-        if not self.source.text or not self.source.text.strip():
-            raise ValueError("Source text is required")
         return self
 
 
