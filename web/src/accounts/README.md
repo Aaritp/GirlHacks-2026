@@ -20,8 +20,7 @@ real Cosmos account.
   reopen. The plant changes only after the save succeeds.
   A seed closed by a self-updating commitment also shows "Completed in": the source and
   the quote that showed it was finished. Reopening clears that evidence.
-- **Ask the Grove slot**: a marked region scoped to the open account. Empty until Person D's
-  component exists.
+- **Ask the Grove**: Person D's Ask box, scoped to the open account.
 
 ## Display states
 
@@ -63,13 +62,11 @@ Still open:
   `scripts/seed_demo_data.py` with the API running. It creates Contoso, Fabrikam and
   Northwind and ingests emails, a chat and a document for each.
 
-## For Person D: Ask the Grove
+## Ask the Grove
 
-Pass your component through `renderAsk` on `AccountsApp` in `App.tsx`:
-
-```tsx
-<AccountsApp api={accountsApi} demo={usingMocks} renderAsk={(accountId) => <AskTheGrove accountId={accountId} />} />
-```
+`App.tsx` mounts Person D's `AskBox` in the slot through `renderAsk`, passing the open
+account's ID so answers come from that account only. Without `renderAsk` the slot shows a
+"not connected" note.
 
 ## Live updates
 

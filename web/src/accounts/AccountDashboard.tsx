@@ -73,10 +73,11 @@ export function AccountDashboard({ api, accountId, account, demo = false, onBack
     {error && <div className="error-banner" role="alert"><span>{error}{timeline ? ' Showing the last loaded data.' : ''}</span>
       <button onClick={() => { void refresh(); }} disabled={busy}>Retry loading</button></div>}
 
-    <section className="ask-slot" aria-label="Ask the Grove" data-account-id={accountId}>
-      {renderAsk ? renderAsk(accountId)
-        : <p><strong>Ask the Grove</strong> will appear here, answering questions about {account?.name ?? 'this account'} only. It is not connected yet.</p>}
-    </section>
+    {/* The mounted Ask box labels itself, so the wrapper only names the region while it is empty. */}
+    {renderAsk ? <div className="ask-slot filled" data-account-id={accountId}>{renderAsk(accountId)}</div>
+      : <section className="ask-slot" aria-label="Ask the Grove" data-account-id={accountId}>
+        <p><strong>Ask the Grove</strong> will appear here, answering questions about {account?.name ?? 'this account'} only. It is not connected yet.</p>
+      </section>}
 
     {loading && !timeline ? <div className="grove-loading" role="status"><Sprout size={38} /><p>Opening this account…</p></div>
       : !timeline ? null : <>

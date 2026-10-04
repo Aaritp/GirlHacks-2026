@@ -10,7 +10,7 @@ import { TranscriptPanel } from './transcript/TranscriptPanel';
 import { IngestPanel } from './ingest/IngestPanel';
 import { createIngestApi } from './ingest/api';
 import { createMockIngestApi } from './ingest/mocks';
-import { MeetingAssistant } from './ask';
+import { AskBox, MeetingAssistant } from './ask';
 import type { Utterance } from './types';
 
 // One API instance for every feature, so extracted seeds land in the grove the forest shows.
@@ -66,6 +66,10 @@ export function App() {
   const parameters = new URLSearchParams(window.location.search);
   // `?accounts` lists client accounts and `?account=ID` opens one; anything else is a meeting grove.
   // `?meetingId=ID&accountId=ID` links that meeting's seeds to the account when they are extracted.
-  if (parameters.has('accounts') || parameters.has('account')) return <AccountsApp api={accountsApi} demo={usingMocks} />;
+  if (parameters.has('accounts') || parameters.has('account')) {
+    // Ask the Grove on an account page answers from that account only.
+    return <AccountsApp api={accountsApi} demo={usingMocks} renderAsk={(accountId) =>
+      <AskBox api={groveApi} accountsApi={accountsApi} accountId={accountId} mockMode={usingMocks} />} />;
+  }
   return <MeetingGrove meetingId={parameters.get('meetingId') || DEMO_MEETING_ID} accountId={parameters.get('accountId') || null} />;
 }

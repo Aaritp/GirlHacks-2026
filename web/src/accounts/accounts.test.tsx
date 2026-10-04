@@ -254,8 +254,9 @@ describe('account dashboard', () => {
   it('marks the Ask the Grove slot and scopes it to the account', async () => {
     window.history.replaceState(null, '', '/?account=acct-harbor');
     render(<AccountsApp api={createMockAccountsApi(createAccountsDemo())} renderAsk={(id) => <p>Ask about {id}</p>} />);
-    const slot = await screen.findByRole('region', { name: 'Ask the Grove' });
+    const mounted = await screen.findByText('Ask about acct-harbor');
+    const slot = mounted.closest<HTMLElement>('.ask-slot')!;
     expect(slot.dataset.accountId).toBe('acct-harbor');
-    expect(within(slot).getByText('Ask about acct-harbor')).toBeTruthy();
+    expect(screen.queryByText(/not connected yet/)).toBeNull();
   });
 });
