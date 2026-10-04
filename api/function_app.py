@@ -1,5 +1,6 @@
 import azure.functions as func
 
+from accounts_timeline import bp as accounts_timeline
 from extract import bp as extract
 from leaves_compose import bp as leaves_compose
 from leaves_suggest import bp as leaves_suggest
@@ -11,7 +12,7 @@ from whiteboard import bp as whiteboard
 # Function keys are required when deployed. Core Tools allows local requests.
 # A production browser must use a trusted gateway / application auth, not a bundled key.
 app = func.FunctionApp(http_auth_level=func.AuthLevel.FUNCTION)
-for blueprint in (extract, leaves_compose, leaves_suggest, seeds, speech_token, whiteboard):
+for blueprint in (accounts_timeline, extract, leaves_compose, leaves_suggest, seeds, speech_token, whiteboard):
     app.register_functions(blueprint)
 
 
