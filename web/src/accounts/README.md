@@ -48,15 +48,17 @@ The meeting grove still uses the old rule (`../forest/health.ts`).
 
 Still open:
 
-- **Linking a meeting to an account.** `/extract` links a meeting only when it receives
-  `accountId`, and the transcript panel does not know the account yet. Proposed:
-  `/?meetingId=ID&accountId=ID`, with `App.tsx` passing `accountId` to the transcript panel.
+- **Linking a meeting to an account.** "Start a meeting" on an account opens
+  `/?meetingId=NEW&accountId=ID`. `App.tsx` passes `accountId` to the transcript panel,
+  which sends it with every `/extract`, so the meeting's seeds appear on the account. A
+  meeting already linked to another account is refused with 409, shown in the panel. In
+  mock mode the meeting grove and the sample accounts are separate, so nothing carries over.
 - **Ingestion.** Person B owns email, chat, document and Slack ingestion. Until it is in
   main, a real account's timeline only contains meetings.
 - **Health timer.** Agreed not to register it for now. The account view does not use the
   seven-day decay; the store methods it needs stay on `feat/health-storage`.
-- **Sample accounts.** Mock mode uses `fixtures.ts`. The real API starts with no accounts
-  until some are created with `POST /api/accounts`.
+- **Sample accounts.** Mock mode uses `fixtures.ts`. For the real API, run
+  `scripts/seed_demo_accounts.py` to create the three demo accounts in storage.
 
 ## For Person D: Ask the Grove
 

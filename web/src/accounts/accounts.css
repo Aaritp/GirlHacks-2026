@@ -1,5 +1,7 @@
 /* Account dashboard. Builds on the forest workspace tokens and controls. */
 .back-link { margin-bottom: 8px; }
+.heading-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+a.button { text-decoration: none; white-space: nowrap; }
 .text-button:hover { text-decoration: underline; text-underline-offset: 5px; }
 a.nav-item { text-decoration: none; box-sizing: border-box; }
 .stage-filter > span:nth-child(2) { overflow-wrap: anywhere; line-height: 1.25; }

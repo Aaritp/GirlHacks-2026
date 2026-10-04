@@ -410,6 +410,7 @@ h1, h2, h3, h4, strong, b { font-weight: 400; }
 .workspace-extension ol, .workspace-extension ul { margin: 8px 0; padding-left: 22px; }
 .workspace-extension li { margin: 6px 0; overflow-wrap: anywhere; }
 a.nav-item { text-decoration: none; }
+.workspace-extension a { color: inherit; text-underline-offset: 5px; }
 
 /* Long commitments are cut at three lines in the garden; the inspector shows the full text. */
 .garden .plant-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
