@@ -106,3 +106,23 @@ describe('meeting transcript endpoint and account extraction', () => {
     expect(fetcher.mock.calls[0][0]).toBe('/api/meetings/meeting%20%26%20two/utterances');
   });
 });
+
+describe('Ask the Grove client', () => {
+  it('mock answers from matching seeds with citations, and says so when nothing matches', async () => {
+    const api = createMockApi();
+    const found = await api.ask({ question: 'Who sends the payroll checklist?' });
+    expect(found.answered).toBe(true);
+    expect(found.answer).toMatch(/^Mock answer \(not AI\)/);
+    expect(found.citations[0]).toMatchObject({ seedId: 'seed-checklist', timestampSec: 12 });
+    const missing = await api.ask({ question: 'Quarterly revenue forecast?' });
+    expect(missing).toMatchObject({ answered: false, citations: [] });
+    await expect(api.ask({ question: '  ' })).rejects.toMatchObject({ status: 400 });
+  });
+
+  it('HTTP client posts questions to /ask', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(Response.json({ answer: 'x', answered: false, citations: [], filters: {} }));
+    await createHttpApi('/api', fetcher).ask({ question: 'Hi', accountId: 'acct-1' });
+    expect(fetcher).toHaveBeenCalledWith('/api/ask', expect.objectContaining({ method: 'POST', body: '{"question":"Hi","accountId":"acct-1"}' }));
+  });
+});
+

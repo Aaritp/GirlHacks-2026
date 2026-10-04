@@ -28,6 +28,7 @@ export function createHttpApi(baseUrl = '/api', fetcher: typeof fetch = fetch): 
     createSeed: (body) => request('/seeds', 'POST', body),
     updateSeed: (meetingId, id, body) => request(
       `/seeds/${encodeURIComponent(id)}?meetingId=${encodeURIComponent(meetingId)}`, 'PATCH', body),
+    ask: (body) => request('/ask', 'POST', body),
     getGrove: (meetingId) => request(`/meetings/${encodeURIComponent(meetingId)}/grove`),
     readWhiteboard: (body) => request('/whiteboard', 'POST', body),
     suggest: (body) => request('/leaves/suggest', 'POST', body),

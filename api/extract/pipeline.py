@@ -9,10 +9,14 @@ from collections.abc import Callable
 from datetime import date, datetime, timezone
 from typing import get_args
 
-from shared.models import MAX_QUOTE, TEXT_SOURCE_TYPES, Grove, Root, Seed, SeedKind, Source, Utterance
+from shared.models import (
+    MAX_QUOTE, TEXT_SOURCE_TYPES, CompletionSuggestion, ExtractResult, Root, Seed, SeedKind, Source, Utterance,
+)
 from shared.store import GroveStore, StorageUnavailable
 
 MAX_TEXT = 500
+# Open commitments sent with a meeting window so the model can spot "that's done" statements.
+MAX_OPEN_COMMITMENTS = 40
 KINDS = get_args(SeedKind)
 UNKNOWN_SPEAKERS = {"unknown", "unknown speaker", "unidentified", "guest"}
 STOPWORDS = {"a", "an", "the", "to", "of", "and", "or", "for", "by", "on", "in", "at", "with",
@@ -141,10 +145,47 @@ def _text_source_account(store: GroveStore, meeting_id: str, source: Source, acc
     return stored.accountId
 
 
+def open_commitments(store: GroveStore, meeting_id: str, account_id: str | None) -> list[Seed]:
+    """Unfinished commitments a meeting might close: the account's (across its meetings and
+    sources) when the meeting is linked to one, otherwise the meeting's own. Most recent first."""
+    seeds = store.list_account_seeds(account_id) if account_id else store.list_seeds(meeting_id)
+    open_ = [seed for seed in seeds if seed.kind == "commitment" and seed.status != "bloom"]
+    open_.sort(key=lambda seed: seed.lastActivity, reverse=True)
+    return open_[:MAX_OPEN_COMMITMENTS]
+
+
+def validate_completions(raw_completions: list, candidates: list[Seed], utterances: list[Utterance],
+                         source_id: str) -> list[CompletionSuggestion]:
+    """Keeps a suggestion only if it names an offered open commitment and its evidence is
+    verbatim in the window. Suggestions never change a seed; the user confirms them."""
+    by_id = {seed.id: seed for seed in candidates}
+    by_utterance = {utterance.id: utterance for utterance in utterances}
+    suggestions: dict[str, CompletionSuggestion] = {}
+    for raw in raw_completions:
+        if not isinstance(raw, dict):
+            continue
+        seed = by_id.get(raw.get("seedId"))
+        quote = raw.get("evidenceQuote")
+        if seed is None or seed.id in suggestions or not isinstance(quote, str) or not quote.strip():
+            continue
+        cited = [by_utterance[uid] for uid in raw.get("utteranceIds") or [] if isinstance(uid, str) and uid in by_utterance]
+        evidence = next((u for u in [*cited, *utterances] if _normalize(quote) in _normalize(u.text)), None)
+        if evidence is None:
+            continue
+        suggestions[seed.id] = CompletionSuggestion(
+            seedId=seed.id, meetingId=seed.meetingId, seedText=seed.text,
+            evidenceQuote=re.sub(r"\s+", " ", quote).strip()[:MAX_QUOTE], sourceId=source_id,
+            sourceType="leaves" if evidence.via == "leaves" else "meeting", timestampSec=evidence.startSec)
+    return list(suggestions.values())
+
+
 def extract_and_save(store: GroveStore, meeting_id: str, utterances: list[Utterance],
-                     model: Callable[[dict], list[dict]], now: datetime | None = None,
-                     account_id: str | None = None, *, source: Source | None = None) -> Grove:
+                     model: Callable[[dict], list[dict] | dict], now: datetime | None = None,
+                     account_id: str | None = None, *, source: Source | None = None) -> ExtractResult:
     """Extracts seeds from a meeting transcript window, or from a text source.
+
+    `model` returns either a list of items, or {"items", "completions"}. For meetings, the window
+    includes open commitments, and verified completions come back as suggestions only.
 
     For a text `source` (email, chat, document, Slack), `utterances` are utterance-shaped chunks of
     its text: they are cited as evidence but not saved as utterances, and seeds point at the source
@@ -166,7 +207,16 @@ def extract_and_save(store: GroveStore, meeting_id: str, utterances: list[Uttera
         "referenceDate": now.date().isoformat(),
         "utterances": [{"id": u.id, "speaker": u.speaker, "startSec": u.startSec, "text": u.text} for u in ordered],
     }
-    items = validate_items(model(window), ordered)
+    candidates = open_commitments(store, meeting_id, account) if source is None else []
+    if candidates:
+        window["openCommitments"] = [{"id": seed.id, "text": seed.text, "owner": seed.owner,
+                                      "deadline": seed.deadline.isoformat() if seed.deadline else None}
+                                     for seed in candidates]
+    output = model(window)
+    raw_items = output.get("items", []) if isinstance(output, dict) else output
+    raw_completions = output.get("completions", []) if isinstance(output, dict) else []
+    items = validate_items(raw_items, ordered)
+    completions = validate_completions(raw_completions, candidates, ordered, meeting_id) if candidates else []
 
     known = store.list_seeds(meeting_id)
     if source is not None:
@@ -198,7 +248,8 @@ def extract_and_save(store: GroveStore, meeting_id: str, utterances: list[Uttera
         found.setdefault(seed.id, seed)
         keys[item["key"]] = seed.id
 
-    return Grove(seeds=list(found.values()), roots=_save_roots(store, meeting_id, items, keys))
+    return ExtractResult(seeds=list(found.values()), roots=_save_roots(store, meeting_id, items, keys),
+                         completions=completions)
 
 
 def _save_roots(store: GroveStore, meeting_id: str, items: list[dict], keys: dict[str, str]) -> list[Root]:

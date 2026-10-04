@@ -28,7 +28,7 @@ interface Props {
 interface Notice { text: string; kind: 'status' | 'alert' }
 
 const EMPTY: TranscriptSnapshot = {
-  entries: [], seeds: [], roots: [], extracting: false, pending: 0, speakers: [], error: null,
+  entries: [], seeds: [], roots: [], extracting: false, pending: 0, speakers: [], suggestions: [], error: null,
 };
 const NAME_KEY = 'grovekeeper.userName';
 
@@ -175,6 +175,12 @@ export function TranscriptPanel({
     }
   }
 
+  async function confirmCompletion(seedId: string) {
+    await session.current?.confirmCompletion(seedId);
+    // The seed may live in another meeting of this account; reload so the forest blooms it.
+    notified.current?.(session.current?.snapshot().seeds ?? []);
+  }
+
   async function retryExtraction() {
     setBusy(true);
     await session.current?.flush();
@@ -224,6 +230,19 @@ export function TranscriptPanel({
       {snapshot.error && <p role="alert">{snapshot.error}</p>}
       {capturing && <p role="status">Transcribing the shared tab and your microphone.</p>}
       {snapshot.extracting && <p role="status">Extracting commitments…</p>}
+      {snapshot.suggestions.length > 0 && (
+        <section aria-labelledby="completions-heading">
+          <h3 id="completions-heading">Sounds finished</h3>
+          <ul>{snapshot.suggestions.map((suggestion) => (
+            <li key={suggestion.seedId}>
+              <p>Mark <strong>“{suggestion.seedText}”</strong> as done?</p>
+              <p><em>“{suggestion.evidenceQuote}”</em>{suggestion.timestampSec !== null && <> at {clock(suggestion.timestampSec)}</>}</p>
+              <button type="button" onClick={() => confirmCompletion(suggestion.seedId)}>Yes, mark done</button>{' '}
+              <button type="button" onClick={() => session.current?.dismissCompletion(suggestion.seedId)}>No</button>
+            </li>
+          ))}</ul>
+        </section>
+      )}
       {renamable.length > 0 && (
         <section aria-labelledby="speakers-heading">
           <h3 id="speakers-heading">Speakers</h3>

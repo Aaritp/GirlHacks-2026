@@ -1,5 +1,5 @@
 import type { GroveApi } from '../api/contracts';
-import type { Root, Seed, Utterance } from '../types';
+import type { CompletionSuggestion, Root, Seed, Utterance } from '../types';
 
 /** A finalized phrase from Speech (or a confirmed Leaves sentence). */
 export interface FinalSegment {
@@ -23,6 +23,8 @@ export interface TranscriptSnapshot {
   pending: number;
   /** Current speaker names in order of first appearance (after renames). */
   speakers: string[];
+  /** Open commitments the transcript says are done, awaiting the user's Yes / No. */
+  suggestions: CompletionSuggestion[];
   error: string | null;
 }
 
@@ -65,10 +67,14 @@ export function createTranscriptSession({
   const names = new Map<string, string>();
   const saveChains = new Map<string, Promise<void>>();
   const nameFor = (label: string) => names.get(label) ?? label;
+  // Completion suggestions awaiting an answer, and seeds already answered (never re-asked).
+  const suggestions = new Map<string, CompletionSuggestion>();
+  const answered = new Set<string>();
 
   const snapshot = (): TranscriptSnapshot => structuredClone({
     entries, seeds: [...seeds.values()], roots: [...roots.values()], extracting: extracting !== null,
-    pending: pending().length, speakers: [...new Set(entries.map((entry) => entry.utterance.speaker))], error,
+    pending: pending().length, speakers: [...new Set(entries.map((entry) => entry.utterance.speaker))],
+    suggestions: [...suggestions.values()], error,
   });
   const emit = () => onChange?.(snapshot());
   const byTime = (a: TranscriptEntry, b: TranscriptEntry) => a.utterance.startSec - b.utterance.startSec;
@@ -119,6 +125,9 @@ export function createTranscriptSession({
       // Overlapping windows return the same seed IDs; the latest server copy wins.
       for (const seed of result.seeds) seeds.set(seed.id, seed);
       for (const root of result.roots) roots.set(root.id, root);
+      for (const suggestion of result.completions ?? []) {
+        if (!answered.has(suggestion.seedId) && !suggestions.has(suggestion.seedId)) suggestions.set(suggestion.seedId, suggestion);
+      }
       error = null;
       // A window sent before a rename comes back with the old label as owner.
       await relabelOwners(result.seeds.filter((seed) => seed.owner && nameFor(seed.owner) !== seed.owner));
@@ -180,6 +189,33 @@ export function createTranscriptSession({
      * re-saved with it, and seeds this session extracted with the old label as owner are
      * patched. Renaming to an existing name merges the two (diarization sometimes splits one voice).
      */
+    /**
+     * Confirms a suggested completion: the seed blooms and records the evidence. Nothing is
+     * ever closed without this explicit confirmation.
+     */
+    async confirmCompletion(seedId: string) {
+      const suggestion = suggestions.get(seedId);
+      if (!suggestion) return;
+      try {
+        const updated = await api.updateSeed(suggestion.meetingId, seedId, {
+          status: 'bloom', lastActivity: new Date().toISOString(),
+          completedBy: { sourceId: suggestion.sourceId, sourceType: suggestion.sourceType,
+            quote: suggestion.evidenceQuote, timestampSec: suggestion.timestampSec },
+        });
+        suggestions.delete(seedId);
+        answered.add(seedId);
+        if (seeds.has(seedId)) seeds.set(seedId, updated);
+      } catch (reason) {
+        error = `Could not mark "${suggestion.seedText}" as done: ${describe(reason)}`;
+      }
+      emit();
+    },
+    /** Declines a suggestion; that commitment is not suggested again in this session. */
+    dismissCompletion(seedId: string) {
+      suggestions.delete(seedId);
+      answered.add(seedId);
+      emit();
+    },
     /**
      * Shows a meeting's previously saved transcript (e.g. after a reload). Restored lines count as
      * already extracted, so they are not re-sent; new lines with the same id are never duplicated.
