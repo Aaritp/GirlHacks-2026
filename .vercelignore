@@ -1,12 +1,12 @@
 # Only the frontend (web/) and the root lockfile are needed on Vercel.
 # Never upload the Azure backend or any local settings/secrets.
-api/
-scripts/
-demo/
-docs/
-.local-tools/
-.claude/
-.impeccable/
+/api/
+/scripts/
+/demo/
+/docs/
+/.local-tools/
+/.claude/
+/.impeccable/
 **/local.settings.json
 .env
 .env.*
