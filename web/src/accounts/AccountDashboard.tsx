@@ -37,6 +37,8 @@ export function AccountDashboard({ api, accountId, account, demo = false, onBack
   const [seedId, setSeedId] = useState<string | null>(null);
   const [sourceId, setSourceId] = useState<string | null>(null);
   const date = today();
+  // A new meeting ID per visit; the meeting grove links its seeds to this account on extraction.
+  const [meetingLink] = useState(() => `?meetingId=${crypto.randomUUID()}&accountId=${encodeURIComponent(accountId)}`);
 
   const items = useMemo(() => timeline ? newestFirst(timeline) : [], [timeline]);
   const seeds = useMemo(() => timeline ? accountSeeds(timeline) : [], [timeline]);
@@ -58,7 +60,8 @@ export function AccountDashboard({ api, accountId, account, demo = false, onBack
     <button className="text-button back-link" onClick={onBack}><ArrowLeft size={16} />All accounts</button>
     <div className="page-heading"><div><h1>{title}</h1>
       {account && <p>{account.industry}{account.aliases.length > 0 && ` · also known as ${account.aliases.join(', ')}`}</p>}</div>
-      <button className="button secondary" onClick={() => { void refresh(); }} disabled={busy || loading}><RefreshCw size={17} />Refresh</button></div>
+      <div className="heading-actions"><a className="button primary" href={meetingLink}><Video size={17} />Start a meeting</a>
+        <button className="button secondary" onClick={() => { void refresh(); }} disabled={busy || loading}><RefreshCw size={17} />Refresh</button></div></div>
     <div className="meeting-summary">
       {summary && <><span className="meeting-chip"><Leaf size={15} />{summary.openCommitments} open {summary.openCommitments === 1 ? 'commitment' : 'commitments'}</span>
         <span className="summary-divider" /><span>{summary.risks} {summary.risks === 1 ? 'risk' : 'risks'}</span>
