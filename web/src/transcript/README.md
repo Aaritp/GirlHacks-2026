@@ -29,5 +29,12 @@ so renames never touch other sessions' seeds.
   seeds. Any session end triggers the final extraction. "Play fixture transcript"
   feeds `../api/fixtures.ts` through the same path for development without a call.
 
+`TranscriptPanel` props for app integration (all optional):
+- `accountId` links the meeting to a client account (sent with every extraction).
+- `meetingStartedAt` is an app-owned meeting clock (ms since epoch) so transcript lines and
+  Whispering Leaves sentences share one timeline.
+- `userName` + `onUserNameChange` make the name controlled, so the app can share one name
+  between the transcript (mic lines) and Leaves. Without them the panel remembers its own.
+
 Whispering Leaves can route a confirmed sentence through a session with
 `session.add({ speaker, text, startSec, via: 'leaves' })` to have it saved and extracted.

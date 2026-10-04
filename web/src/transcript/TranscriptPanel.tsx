@@ -13,6 +13,14 @@ interface Props {
   meetingId: string;
   /** Client account this meeting belongs to (e.g. from `?accountId=`). Its seeds then appear on that account. */
   accountId?: string | null;
+  /**
+   * App-owned meeting start (ms since epoch), shared with other features (e.g. Whispering Leaves)
+   * so every utterance uses one timeline. Without it the panel keeps its own clock.
+   */
+  meetingStartedAt?: number;
+  /** Controlled display name, shared with other features. Without it the panel keeps its own (remembered per browser). */
+  userName?: string;
+  onUserNameChange?: (name: string) => void;
   /** Called after extraction saves seeds so the forest can reload the grove. */
   onSeedsExtracted?: (seeds: Seed[]) => void;
 }
@@ -60,16 +68,28 @@ function SpeakerRename({ label, onRename }: { label: string; onRename: (name: st
   );
 }
 
-export function TranscriptPanel({ api, meetingId, accountId = null, onSeedsExtracted }: Props) {
+export function TranscriptPanel({
+  api, meetingId, accountId = null, meetingStartedAt, userName: sharedName, onUserNameChange, onSeedsExtracted,
+}: Props) {
   const [snapshot, setSnapshot] = useState<TranscriptSnapshot>(EMPTY);
   const [partials, setPartials] = useState<Partial<Record<AudioChannel, string>>>({});
   const [capturing, setCapturing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
-  const [userName, setUserName] = useState(readSavedName);
+  const [ownName, setOwnName] = useState(readSavedName);
+  const userName = sharedName ?? ownName;
+  const changeName = (name: string) => {
+    if (sharedName !== undefined) { onUserNameChange?.(name); return; }
+    setOwnName(name);
+    saveName(name);
+  };
   const session = useRef<TranscriptSession | null>(null);
   const capture = useRef<OnlineCapture | null>(null);
   const startedAt = useRef<number | null>(null);
+  const sharedClock = useRef(meetingStartedAt);
+  sharedClock.current = meetingStartedAt;
+  // Seconds since the meeting started: the app's shared clock when given, otherwise the panel's own.
+  const meetingSeconds = () => (Date.now() - (sharedClock.current ?? (startedAt.current ??= Date.now()))) / 1000;
   const notified = useRef(onSeedsExtracted);
   notified.current = onSeedsExtracted;
   const unsupported = useMemo(() => checkTabCaptureSupport(browserEnvironment()), []);
@@ -92,9 +112,10 @@ export function TranscriptPanel({ api, meetingId, accountId = null, onSeedsExtra
     // Show what this meeting already saved, so a reload never looks like lost work.
     api.getUtterances(meetingId).then(({ utterances }) => {
       if (cancelled || !current.restore(utterances)) return;
-      // Continue the meeting clock after the last saved line instead of restarting at 0:00.
+      // Continue the panel's own clock after the last saved line instead of restarting at 0:00.
+      // A shared app clock is left alone: the app owns that timeline.
       const lastSec = Math.max(...utterances.map((utterance) => utterance.startSec));
-      startedAt.current ??= Date.now() - (lastSec + 1) * 1000;
+      if (sharedClock.current === undefined) startedAt.current ??= Date.now() - (lastSec + 1) * 1000;
     }, (reason: unknown) => {
       if (!cancelled) {
         setNotice({ text: `Could not load the saved transcript: ${reason instanceof Error ? reason.message : 'unknown error'}`, kind: 'alert' });
@@ -123,7 +144,6 @@ export function TranscriptPanel({ api, meetingId, accountId = null, onSeedsExtra
   async function share() {
     setBusy(true);
     setNotice(null);
-    startedAt.current ??= Date.now();
     try {
       capture.current = await startOnlineCapture(api, {
         onPartial: (channel, text, speaker) => setPartials((current) => ({ ...current, [channel]: `${speaker}: ${text}` })),
@@ -133,7 +153,7 @@ export function TranscriptPanel({ api, meetingId, accountId = null, onSeedsExtra
         },
         onWarning: (text) => setNotice({ text, kind: 'alert' }),
         onEnded: (reason, message) => { void finish(reason, message); },
-      }, { userName, baseSec: (Date.now() - startedAt.current) / 1000 });
+      }, { userName, baseSec: meetingSeconds() });
       setCapturing(true);
     } catch (reason) {
       setNotice({ text: reason instanceof Error ? reason.message : 'Could not start capture.', kind: 'alert' });
@@ -184,7 +204,7 @@ export function TranscriptPanel({ api, meetingId, accountId = null, onSeedsExtra
       <p>
         <label>Your name{' '}
           <input value={userName} maxLength={100} disabled={capturing} autoComplete="name"
-            onChange={(event) => { setUserName(event.target.value); saveName(event.target.value); }} />
+            onChange={(event) => changeName(event.target.value)} />
         </label>
       </p>
       <p>
