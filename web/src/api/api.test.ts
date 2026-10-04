@@ -44,11 +44,8 @@ describe('mock API', () => {
     await expect(api.extract({ ...request, meetingId: 'wrong-meeting' })).rejects.toMatchObject({ status: 400 });
   });
 
-  it('returns composed text only and does not pretend to provide Speech or OCR', async () => {
+  it('does not pretend to provide Speech or OCR', async () => {
     const api = createMockApi();
-    expect(await api.compose({ meetingId: DEMO_MEETING_ID, picked: ['a', 'custom', 'word'] }))
-      .toEqual({ sentence: 'a custom word' });
-    await expect(api.compose({ meetingId: DEMO_MEETING_ID, picked: [] })).rejects.toMatchObject({ status: 400 });
     await expect(api.getSpeechToken()).rejects.toMatchObject({ status: 501 });
     await expect(api.readWhiteboard({ meetingId: DEMO_MEETING_ID, imageBase64: 'test' }))
       .rejects.toMatchObject({ status: 501 });
@@ -123,6 +120,22 @@ describe('Ask the Grove client', () => {
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(Response.json({ answer: 'x', answered: false, citations: [], filters: {} }));
     await createHttpApi('/api', fetcher).ask({ question: 'Hi', accountId: 'acct-1' });
     expect(fetcher).toHaveBeenCalledWith('/api/ask', expect.objectContaining({ method: 'POST', body: '{"question":"Hi","accountId":"acct-1"}' }));
+  });
+});
+
+describe('clear all', () => {
+  it('mock clears its in-memory data only with the exact phrase', async () => {
+    const api = createMockApi();
+    await expect(api.clearAll({ confirm: 'clear all' })).rejects.toMatchObject({ status: 400 });
+    const result = await api.clearAll({ confirm: 'CLEAR ALL' });
+    expect(result.deleted.seeds).toBe(demoGrove.seeds.length);
+    expect(await api.getGrove(DEMO_MEETING_ID)).toEqual({ seeds: [], roots: [] });
+  });
+
+  it('HTTP client posts to /maintenance/clear-all', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(Response.json({ deleted: {}, keptAccounts: true }));
+    await createHttpApi('/api', fetcher).clearAll({ confirm: 'CLEAR ALL', keepAccounts: true });
+    expect(fetcher.mock.calls[0][0]).toBe('/api/maintenance/clear-all');
   });
 });
 

@@ -35,10 +35,10 @@ and records `completedBy`; No dismisses it for the session. Nothing is closed wi
 
 `TranscriptPanel` props for app integration (all optional):
 - `accountId` links the meeting to a client account (sent with every extraction).
-- `meetingStartedAt` is an app-owned meeting clock (ms since epoch) so transcript lines and
-  Whispering Leaves sentences share one timeline.
-- `userName` + `onUserNameChange` make the name controlled, so the app can share one name
-  between the transcript (mic lines) and Leaves. Without them the panel remembers its own.
+- `meetingStartedAt` is an app-owned meeting clock (ms since epoch), so every feature shares
+  one meeting timeline.
+- `userName` + `onUserNameChange` make the name controlled, so the app owns one display name.
+  Without them the panel remembers its own.
 
-Whispering Leaves can route a confirmed sentence through a session with
-`session.add({ speaker, text, startSec, via: 'leaves' })` to have it saved and extracted.
+Mute my mic: while sharing, this disables only Grovekeeper's microphone capture (a call app's
+mute cannot reach this tab). Nothing the user says is transcribed until they unmute.

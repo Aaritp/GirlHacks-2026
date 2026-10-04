@@ -46,6 +46,9 @@ class GroveStore(Protocol):
     def list_accounts(self) -> list[Account]: ...
     def list_account_sources(self, account_id: str) -> list[Source]: ...
     def list_account_seeds(self, account_id: str) -> list[Seed]: ...
+    # Development reset: deletes every seed, root, utterance and source (and accounts unless kept).
+    # Returns how many records were deleted per collection. Callers must guard it (see api/admin).
+    def clear_all(self, keep_accounts: bool = True) -> dict[str, int]: ...
 
 
 class MemoryStore:
@@ -151,6 +154,16 @@ class MemoryStore:
     def list_account_seeds(self, account_id: str):
         with self.lock:
             return [s.model_copy(deep=True) for s in self.seeds.values() if s.accountId == account_id]
+
+    def clear_all(self, keep_accounts: bool = True):
+        with self.lock:
+            tables = {"seeds": self.seeds, "roots": self.roots, "utterances": self.utterances, "sources": self.sources}
+            if not keep_accounts:
+                tables["accounts"] = self.accounts
+            counts = {name: len(table) for name, table in tables.items()}
+            for table in tables.values():
+                table.clear()
+            return counts
 
 
 store = MemoryStore()

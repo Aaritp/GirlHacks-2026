@@ -1,6 +1,6 @@
 import type {
-  AskRequest, AskResponse, ComposeRequest, ComposeResult, ExtractRequest, ExtractResult, Grove, Seed, SeedPatch,
-  SpeechToken, SuggestRequest, Suggestions, Utterance, UtteranceList, WhiteboardRequest, WhiteboardResult,
+  AskRequest, AskResponse, ClearAllRequest, ClearAllResult, ExtractRequest, ExtractResult, Grove, Seed, SeedPatch,
+  SpeechToken, Utterance, UtteranceList, WhiteboardRequest, WhiteboardResult,
 } from '../types';
 
 export interface GroveApi {
@@ -15,9 +15,9 @@ export interface GroveApi {
   getGrove(meetingId: string): Promise<Grove>;
   /** Ask the Grove: a cited answer from stored seeds, sources and transcripts. */
   ask(request: AskRequest): Promise<AskResponse>;
+  /** Deletes all stored data (accounts kept by default). The server must opt in. */
+  clearAll(request: ClearAllRequest): Promise<ClearAllResult>;
   readWhiteboard(request: WhiteboardRequest): Promise<WhiteboardResult>;
-  suggest(request: SuggestRequest): Promise<Suggestions>;
-  compose(request: ComposeRequest): Promise<ComposeResult>;
 }
 
 export class ApiError extends Error {

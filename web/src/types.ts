@@ -123,16 +123,15 @@ export interface AskFilters {
   keywords: string[];
 }
 /** answered is false (with no citations) when the grove does not contain the answer. */
+/** Development reset (POST /maintenance/clear-all). confirm must be exactly "CLEAR ALL". */
+export interface ClearAllRequest { confirm: string; keepAccounts?: boolean }
+export interface ClearAllResult { deleted: Record<string, number>; keptAccounts: boolean }
 export interface AskResponse { answer: string; answered: boolean; citations: Citation[]; filters: AskFilters }
 export interface SpeechToken { token: string; region: string }
 export interface ExtractRequest { meetingId: string; utterances: Utterance[]; accountId?: string | null }
 export interface UtteranceList { utterances: Utterance[] }
 export interface WhiteboardRequest { meetingId: string; imageBase64: string }
 export interface WhiteboardResult { text: string; seeds: Seed[] }
-export interface SuggestRequest { meetingId: string; recentText: string }
-export interface Suggestions { words: string[]; phrases: string[] }
-export interface ComposeRequest { meetingId: string; picked: string[] }
-export interface ComposeResult { sentence: string }
 /** IDs and source provenance are immutable; meetingId travels in the PATCH query. */
 export type SeedPatch = Partial<Pick<Seed,
   'text' | 'owner' | 'deadline' | 'kind' | 'status' | 'health' | 'lastActivity' | 'size' | 'completedBy'

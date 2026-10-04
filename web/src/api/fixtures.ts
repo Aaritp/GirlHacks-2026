@@ -1,4 +1,4 @@
-import type { Grove, Source, Suggestions, Utterance } from '../types';
+import type { Grove, Source, Utterance } from '../types';
 
 export const DEMO_MEETING_ID = 'demo-meeting';
 export const demoSource: Source = {
@@ -24,8 +24,4 @@ export const demoGrove: Grove = {
   ],
   roots: [{ id: 'root-review-checklist', meetingId: DEMO_MEETING_ID,
     fromSeedId: 'seed-review', toSeedId: 'seed-checklist', type: 'depends_on' }],
-};
-export const demoSuggestions: Suggestions = {
-  words: ['I', 'can', 'review', 'checklist', 'tomorrow', 'please', 'help', 'agree'],
-  phrases: ['I can review the checklist.', 'Could you clarify the deadline?', 'I agree with this decision.'],
 };

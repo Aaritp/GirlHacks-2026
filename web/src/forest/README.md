@@ -44,7 +44,7 @@ Production authorization/gateway configuration remains owned by the shared backe
 - `dismiss`: closes the inspector/form; `dwell`: paints progress at the cursor.
 - Native controls call these same feature actions. Do not attach a second click-to-
   action adapter to them. Scope input events to the active feature when integrating
-  Leaves and transcript views; coordinate who owns global confirm/dismiss dispatch.
+  other views; coordinate who owns global confirm/dismiss dispatch.
 
 ## Health
 

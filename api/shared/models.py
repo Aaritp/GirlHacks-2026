@@ -189,6 +189,20 @@ class AskResponse(WireModel):
     filters: AskFilters
 
 
+CLEAR_ALL_PHRASE = "CLEAR ALL"
+
+
+class ClearAllRequest(WireModel):
+    """Development reset. The phrase must be typed exactly; the server must also opt in."""
+    confirm: str
+    keepAccounts: bool = True
+
+
+class ClearAllResult(WireModel):
+    deleted: dict[str, int]
+    keptAccounts: bool
+
+
 class ExtractRequest(WireModel):
     meetingId: Identifier
     utterances: list[Utterance] = Field(min_length=1, max_length=200)
@@ -210,31 +224,6 @@ class WhiteboardRequest(WireModel):
 class WhiteboardResult(WireModel):
     text: str
     seeds: list[Seed]
-
-
-class SuggestRequest(WireModel):
-    meetingId: Identifier
-    recentText: str = Field(max_length=20000)
-
-
-class Suggestions(WireModel):
-    words: list[str]
-    phrases: list[str]
-
-
-class ComposeRequest(WireModel):
-    meetingId: Identifier
-    picked: list[Text] = Field(min_length=1, max_length=200)
-
-    @model_validator(mode="after")
-    def nonblank_words(self):
-        if any(not word.strip() for word in self.picked):
-            raise ValueError("Picked words cannot be blank")
-        return self
-
-
-class ComposeResult(WireModel):
-    sentence: str
 
 
 class SpeechToken(WireModel):

@@ -38,7 +38,7 @@ creates a seed.
 ## Live meeting integration
 
 `MeetingAssistant` is mounted in App's meeting view, using the same GroveApi as
-transcript and Leaves. It sends `accountId`, `meetingId` and `recentUtterances`.
+the transcript. It sends `accountId`, `meetingId` and `recentUtterances`.
 The request contains at most 200 unique lines from that meeting (the backend limit),
 ordered by timestamp; older saved evidence remains retrievable by the backend.
 
@@ -47,9 +47,7 @@ Small shared hooks:
 - `TranscriptPanel.onUtterancesChange` publishes finalized lines, including restored
   transcript and lines whose save is pending/failed. Partial recognition text is not
   sent. The callback does not replace the existing save/extract flow.
-- `LeavesPanel.onUtteranceStarted` publishes a contribution only when confirmed audio
-  playback starts. Drafts and unconfirmed previews never become assistant context.
-- App combines the two streams and scopes context by meeting. Ingestion and account
+- App passes those lines to the assistant, scoped by meeting. Ingestion and account
   dashboard routing are preserved.
 
 ## Voice questions
@@ -88,7 +86,7 @@ mentions that account. Refresh reloads saved context.
 Tests cover scope/200-line limits, unanswered results, stale account responses,
 source text/timestamp navigation, API errors, account aliases and dismissal,
 push-to-talk release/cancellation and late permission, SDK resource cleanup, and
-the real App's transcript/Leaves context wiring. See `demo/ask-assistant.md` for
+the real App's transcript context wiring. See `demo/ask-assistant.md` for
 the manual demo/preflight path.
 
 Pre-push checks: 155 frontend tests and 210 backend tests pass; `npm run typecheck`

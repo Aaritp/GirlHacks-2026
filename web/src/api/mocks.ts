@@ -1,6 +1,6 @@
 import type { CompletionSuggestion, Grove, Seed, Utterance } from '../types';
 import { ApiError, type GroveApi } from './contracts';
-import { demoGrove, demoSuggestions } from './fixtures';
+import { demoGrove } from './fixtures';
 
 /** Per-instance, in-memory state. No AI, audio, OCR, or external requests. */
 export function createMockApi(initial: Grove = demoGrove): GroveApi {
@@ -95,6 +95,14 @@ export function createMockApi(initial: Grove = demoGrove): GroveApi {
       return structuredClone(updated);
     },
     async getGrove(meetingId) { return grove(meetingId); },
+    async clearAll({ confirm, keepAccounts = true }) {
+      if (confirm !== 'CLEAR ALL') throw new ApiError(400, 'INVALID_REQUEST', 'Type CLEAR ALL exactly to confirm.');
+      const deleted = { seeds: seeds.size, roots: roots.length, utterances: utterances.size };
+      seeds.clear();
+      roots.length = 0;
+      utterances.clear();
+      return { deleted, keptAccounts: keepAccounts };
+    },
     async ask({ question, accountId = null, meetingId = null }) {
       if (!question.trim()) throw new ApiError(400, 'INVALID_REQUEST', 'Ask a question.');
       // Development behavior (not AI): seeds sharing a significant word with the question.
@@ -115,14 +123,6 @@ export function createMockApi(initial: Grove = demoGrove): GroveApi {
     },
     async readWhiteboard() {
       throw new ApiError(501, 'NOT_IMPLEMENTED', 'Whiteboard OCR has not been connected.');
-    },
-    async suggest() { return structuredClone(demoSuggestions); },
-    async compose({ picked }) {
-      if (!picked.length || picked.length > 200 || picked.some((word) => !word.trim())) {
-        throw new ApiError(400, 'INVALID_REQUEST', 'Pick or spell at least one non-empty word.');
-      }
-      // Return a preview only. Never invoke speech from this API.
-      return { sentence: picked.join(' ') };
     },
   };
 }
