@@ -87,11 +87,16 @@ def validate_items(raw_items: list, utterances: list[Utterance]):
     return valid
 
 
-def find_duplicate(item: dict, seeds: list[Seed]):
+def find_duplicate(item: dict, seeds: list[Seed], whiteboard_id: str | None = None):
     """Same item seen in an overlapping window: same kind and anchor time with similar text,
     or a near-identical restatement later in the meeting with a compatible owner."""
     for seed in seeds:
-        if seed.kind != item["kind"] or seed.sourceType == "whiteboard":
+        if seed.kind != item["kind"]:
+            continue
+        if whiteboard_id is not None:
+            if seed.sourceType != "whiteboard" or seed.sourceId != whiteboard_id:
+                continue
+        elif seed.sourceType == "whiteboard":
             continue
         score = similarity(seed.text, item["text"])
         same_anchor = seed.timestampSec is not None and abs(seed.timestampSec - item["anchor"].startSec) < 1e-6
@@ -104,13 +109,20 @@ def find_duplicate(item: dict, seeds: list[Seed]):
 
 
 def extract_and_save(store: GroveStore, meeting_id: str, utterances: list[Utterance],
-                     model: Callable[[dict], list[dict]], now: datetime | None = None) -> Grove:
+                     model: Callable[[dict], list[dict]], now: datetime | None = None,
+                     *, source: Source | None = None) -> Grove:
     now = now or datetime.now(timezone.utc)
+    if source is not None and (source.meetingId != meeting_id or source.type != "whiteboard"):
+        raise ValueError("Explicit extraction sources must be whiteboards in this meeting")
+    if any(u.meetingId != meeting_id for u in utterances):
+        raise ValueError("Extraction evidence must belong to this meeting")
+    whiteboard_id = source.id if source else None
     # Persist the transcript and its Source first so every seed can be traced back.
-    store.create_source(Source(id=meeting_id, meetingId=meeting_id, type="meeting",
-                               title="Meeting transcript", createdAt=now))
-    for utterance in utterances:
-        store.save_utterance(utterance)
+    store.create_source(source or Source(id=meeting_id, meetingId=meeting_id, type="meeting",
+                                        title="Meeting transcript", createdAt=now))
+    if source is None:
+        for utterance in utterances:
+            store.save_utterance(utterance)
 
     ordered = sorted(utterances, key=lambda item: (item.startSec, item.id))
     window = {
@@ -123,15 +135,16 @@ def extract_and_save(store: GroveStore, meeting_id: str, utterances: list[Uttera
     found: dict[str, Seed] = {}
     keys: dict[str, str] = {}
     for item in items:
-        seed = find_duplicate(item, known)
+        seed = find_duplicate(item, known, whiteboard_id)
         if seed is None:
             anchor = item["anchor"]
             candidate = Seed(
                 id=f"seed-{_digest(meeting_id, item['kind'], anchor.id, _normalize(item['text']))}",
                 meetingId=meeting_id, text=item["text"], owner=item["owner"], deadline=item["deadline"],
                 kind=item["kind"], status="seed", health=1,
-                sourceType="leaves" if anchor.via == "leaves" else "meeting", sourceId=meeting_id,
-                timestampSec=anchor.startSec, lastActivity=now, size=1,
+                sourceType="whiteboard" if source else ("leaves" if anchor.via == "leaves" else "meeting"),
+                sourceId=source.id if source else meeting_id,
+                timestampSec=None if source else anchor.startSec, lastActivity=now, size=1,
             )
             # Deterministic IDs make a concurrent duplicate create resolve to the same seed.
             seed = store.create_seed(candidate) or store.get_seed(meeting_id, candidate.id)

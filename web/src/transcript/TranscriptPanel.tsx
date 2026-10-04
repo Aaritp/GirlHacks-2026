@@ -8,6 +8,10 @@ import { startLiveTranscriber, type LiveTranscriber } from './speech';
 interface Props {
   api: GroveApi;
   meetingId: string;
+  /** Optional app-owned clock shared with Leaves. */
+  meetingStartedAt?: number;
+  /** Disable the legacy microphone path while the online tab-capture owner integrates it. */
+  allowMicrophone?: boolean;
   /** Called after extraction saves seeds so the forest can reload the grove. */
   onSeedsExtracted?: (seeds: Seed[]) => void;
 }
@@ -19,7 +23,7 @@ function clock(seconds: number) {
   return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, '0')}`;
 }
 
-export function TranscriptPanel({ api, meetingId, onSeedsExtracted }: Props) {
+export function TranscriptPanel({ api, meetingId, onSeedsExtracted, meetingStartedAt, allowMicrophone = true }: Props) {
   const [snapshot, setSnapshot] = useState<TranscriptSnapshot>(EMPTY);
   const [partial, setPartial] = useState('');
   const [listening, setListening] = useState(false);
@@ -56,7 +60,7 @@ export function TranscriptPanel({ api, meetingId, onSeedsExtracted }: Props) {
   async function start() {
     setBusy(true);
     setMicError('');
-    startedAt.current ??= Date.now();
+    startedAt.current ??= meetingStartedAt ?? Date.now();
     try {
       live.current = await startLiveTranscriber(api, {
         onPartial: (text, speaker) => setPartial(`${speaker}: ${text}`),
@@ -94,9 +98,9 @@ export function TranscriptPanel({ api, meetingId, onSeedsExtracted }: Props) {
     <section aria-labelledby="transcript-heading">
       <h2 id="transcript-heading">Live transcript</h2>
       <p>
-        {listening
+        {allowMicrophone && (listening
           ? <button type="button" onClick={stop} disabled={busy}>Stop listening</button>
-          : <button type="button" onClick={start} disabled={busy}>Start listening</button>}
+          : <button type="button" onClick={start} disabled={busy}>Start listening</button>)}
         {' '}
         <button type="button" onClick={playFixture} disabled={busy || listening}>Play fixture transcript</button>
         {failed && <> {' '}<button type="button" onClick={() => session.current?.retryFailed()}>Retry unsaved</button></>}

@@ -107,12 +107,13 @@ def test_invalid_json_is_a_contract_error(handlers):
     assert response.status_code == 400
 
 
-def test_service_stubs_do_not_claim_success(handlers, monkeypatch):
+def test_speech_missing_configuration_and_preview_only_composition(handlers, monkeypatch):
     monkeypatch.delenv("AZURE_SPEECH_KEY", raising=False)
     assert handlers["speech_token"](request()).status_code == 503
     response = handlers["compose"](request({"meetingId": "a", "picked": ["hello"]}))
-    assert response.status_code == 501
-    assert payload(response)["error"]["code"] == "NOT_IMPLEMENTED"
+    assert response.status_code == 200
+    assert payload(response) == {"sentence": "hello"}
+    assert store.list_utterances("a") == []
 
 
 def test_all_contract_routes_are_registered():

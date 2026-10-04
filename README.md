@@ -1,13 +1,17 @@
 # Grovekeeper
 
-A meeting productivity app that turns commitments and decisions into seeds in a
-living forest, with mouse, hand and head controls. Whispering Leaves will let people
-compose and confirm speech using the meeting's context.
+A client-account workspace that turns commitments and decisions into traceable
+seeds in a living grove. The team plan brings together online meetings, Slack,
+and pasted or uploaded email, chat, and documents. Whispering Leaves lets people
+compose, edit, confirm, and speak with mouse and keyboard.
 
-This repository contains the **shared foundation and Person C's forest workspace**.
+This branch contains the **shared foundation, Person C's forest workspace, and Whispering Leaves**.
 The forest includes garden/list views, editable seeds, progress actions, dependency
-roots, shared-input handling, and seed-health logic. Other owners' real integrations
-are still in progress. Shared contracts, fixtures, a typed API client, one input bus,
+roots, shared-input handling, and seed-health logic. Account types/storage and
+online tab-audio capture are pending shared-team integration. Slack is the only
+planned live content connector; email/chat/docs use paste or upload. Hand/head
+tracking and in-person capture are outside the new product scope.
+Shared contracts, fixtures, a typed API client, one input bus,
 and a Python Azure Functions scaffold support parallel work.
 
 ## Run the frontend
@@ -66,19 +70,25 @@ Data is lost on restart and is not shared across workers. Set it to `cosmos` (wi
 `AZURE_COSMOS_ENDPOINT` and `AZURE_COSMOS_KEY`) for Azure Cosmos DB; see
 [docs/storage.md](docs/storage.md). Unconfigured storage returns 503, never mock data.
 Speech tokens and extraction need their `AZURE_SPEECH_*` / `AZURE_OPENAI_*` settings and
-return 503 `SERVICE_NOT_CONFIGURED` without them; whiteboard and Leaves AI endpoints
-return 501 until their owners connect the real services. Browser extraction mocks turn each utterance into a seed;
+return 503 `SERVICE_NOT_CONFIGURED` without them. Leaves suggestions use the shared
+utterance repository and Azure OpenAI; composition preserves arbitrary spelling and
+returns an editable preview. Azure Speech playback requires explicit confirmation.
+Whiteboard OCR is retained as inactive backup code and is not mounted in the app
+or included in the active demo. See [demo/services.md](demo/services.md) for configuration.
+Browser extraction mocks turn each utterance into a seed;
 they are **not AI extraction**. Mock composition joins picked words and never speaks.
 
 ## Ownership and branches
 
-The foundation is shared on `feat/shared-foundation`. Person C's current work is on
-`feat/forest-ui`. Branch feature work from the same foundation revision.
+Person A and Person C are merged into `main`. This Leaves branch is based on
+`main` at dbaba29 and keeps the shared forest, API instance, and repository.
+The team merge order is A, C, then D. Person B starts ingestion/Slack from main;
+do not merge `feat/input-controls`. Shared account types/storage follow these merges.
 
 | Owner | Suggested branch | Files and responsibilities |
 | --- | --- | --- |
 | A | `feat/transcription-extraction` | `web/src/transcript`, `api/extract`, `api/speech_token` |
-| B | `feat/input-controls` | `web/src/input` — mouse, hand, head, calibration, dwell |
+| B | New branch from `main` | Email/chat/document paste-upload ingestion and Slack |
 | C | `feat/forest-ui` | `web/src/forest` — render, grow, wilt, resize, roots |
 | D | `feat/whispering-leaves` | `web/src/leaves`, `api/leaves_*`, `api/whiteboard`, `demo` |
 | Agree as a team | `feat/shared-backend` | `api/seeds`, `api/shared`, `api/health_timer` — Cosmos, CRUD, health |
@@ -93,15 +103,17 @@ See `web/src/forest/README.md` for the forest API/input handoff and
 
 - `web/src/types.ts` is the frontend source of truth; Python mirrors live in
   `api/shared/models.py`. Request/response details are in [docs/api.md](docs/api.md).
-- Features subscribe to `inputBus`, never raw MediaPipe output. It supports all seven
-  events including `dwell`; each subscription returns an unsubscribe callback.
+- The forest retains the shared `inputBus` for compatibility. Leaves uses native
+  mouse/keyboard controls and never dispatches the forest's global confirm action.
+  Do not mount the hand/head-tracking adapters under the revised product scope.
 - Input positions are normalized viewport coordinates. The mouse adapter currently
   supplies point/select; feature buttons publish explicit actions through the bus.
 - Seeds retain `sourceId`, `sourceType`, and `timestampSec` for traceability. Updating
   a seed cannot change its identity, meeting partition, or source provenance.
-- Camera tracking remains local. Mic audio goes directly to Azure Speech after the
-  backend issues a short-lived token. Whiteboard OCR explicitly uploads an image;
-  that is a separate operation from camera tracking.
+- Online meetings use a shared Zoom/Meet/Teams browser tab in the target flow.
+  The current app hides the legacy microphone capture while that integration is
+  pending. No hand/head tracking branch is mounted. Speech output receives only
+  a short-lived backend token; service keys remain server-side.
 - Whispering Leaves returns editable text for review. Speaking requires explicit
   confirmation and users must always be able to spell arbitrary words.
 - Keep secrets in ignored local settings or Azure app settings. `VITE_*` values are
