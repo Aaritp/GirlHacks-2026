@@ -11,8 +11,4 @@
 .leaves [role="alert"] { color: #892d21; font-weight: 600; }
 .leaves-notice { background: #fff1c7; padding: .75rem; }
 .leaves-help, .leaves small { font-size: .9rem; }
-.whiteboard { border-top: 1px solid #9eb4a3; margin-top: 2rem; padding-top: 1rem; }
-.whiteboard pre { white-space: pre-wrap; overflow-wrap: anywhere; }
-.leaves-participant { display: block; margin: 1rem 0; font-family: system-ui, sans-serif; }
-.leaves-participant input { margin-left: .75rem; padding: .5rem; border: 1px solid #496e57; border-radius: .35rem; }
 .leaves p + p { margin-top: .65rem; }
