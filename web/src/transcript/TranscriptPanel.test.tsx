@@ -132,4 +132,22 @@ describe('TranscriptPanel', () => {
       demoUtterances.pop();
     }
   });
+
+  it('mutes only Grovekeeper\'s mic on request, because a call app\'s mute cannot reach this tab', async () => {
+    render(<TranscriptPanel api={seededApi()} meetingId={MEETING} userName="Prisha" />);
+    fireEvent.click(screen.getByRole('button', { name: /share meeting tab/i }));
+    await waitFor(() => expect(started).toHaveLength(1));
+    expect(screen.getByText(/does not stop Grovekeeper/i)).toBeTruthy();
+    expect(started[0].isMicrophoneMuted?.()).toBe(false);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mute my mic' }));
+    await waitFor(() => expect(mute).toHaveBeenLastCalledWith(true));
+    expect(started[0].isMicrophoneMuted?.()).toBe(true);
+    expect(screen.getByRole('button', { name: 'Unmute my mic' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByText(/nothing you say is transcribed/i)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Unmute my mic' }));
+    await waitFor(() => expect(mute).toHaveBeenLastCalledWith(false));
+    expect(started[0].isMicrophoneMuted?.()).toBe(false);
+  });
 });
