@@ -8,7 +8,8 @@ new objects and retain IDs when retrying.
 
 ## Person B 2.0 additions
 
-- `POST /ingest`: `{ accountId, sourceType: email|chat|document, title, text }`
+- `POST /ingest`: `{ accountId, sourceType: email|chat|document, title, text, occurredAt? }`. `occurredAt`
+  (ISO datetime, never in the future) dates the source and anchors relative deadlines; default now.
   returns `{ source, seeds, roots }`. Instead of text, accept structured
   `messages: [{ author, recipients?, timestamp?, text, externalId? }]`, or
   document `filename` + `fileBase64`. Exactly one content representation is required.

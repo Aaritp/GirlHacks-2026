@@ -7,6 +7,8 @@ export interface Message { author: string; recipients?: string[]; timestamp?: st
 export interface IngestRequest {
   accountId: string; sourceType: IngestSourceType; title: string;
   text?: string; messages?: Message[]; filename?: string; fileBase64?: string;
+  /** When it happened (ISO datetime with offset); defaults to now. Never in the future. */
+  occurredAt?: string;
 }
 export interface IngestResult { source: Source & { messages?: Message[] }; seeds: Seed[]; roots: Root[] }
 export interface SlackResult { importedMessages: number; lastSyncedTs: string; seeds: Seed[]; sources: Source[] }
