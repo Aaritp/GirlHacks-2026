@@ -1,0 +1,360 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-03T19:13:04.101Z",
+  "title": "Design System: Grovekeeper",
+  "extensions": {
+    "colorMeta": {
+      "pine": {
+        "displayName": "pine",
+        "role": "primary",
+        "tonalRamp": [
+          "oklch(0.15 0.0488 167.85)",
+          "oklch(0.26 0.0488 167.85)",
+          "oklch(0.38 0.0488 167.85)",
+          "oklch(0.49 0.0488 167.85)",
+          "oklch(0.61 0.0488 167.85)",
+          "oklch(0.72 0.0488 167.85)",
+          "oklch(0.84 0.0488 167.85)",
+          "oklch(0.95 0.0488 167.85)"
+        ]
+      },
+      "pine-hover": {
+        "displayName": "pine hover",
+        "role": "primary",
+        "tonalRamp": [
+          "oklch(0.15 0.0589 158.43)",
+          "oklch(0.26 0.0589 158.43)",
+          "oklch(0.38 0.0589 158.43)",
+          "oklch(0.49 0.0589 158.43)",
+          "oklch(0.61 0.0589 158.43)",
+          "oklch(0.72 0.0589 158.43)",
+          "oklch(0.84 0.0589 158.43)",
+          "oklch(0.95 0.0589 158.43)"
+        ]
+      },
+      "citron": {
+        "displayName": "citron",
+        "role": "primary",
+        "tonalRamp": [
+          "oklch(0.15 0.1050 119.98)",
+          "oklch(0.26 0.1050 119.98)",
+          "oklch(0.38 0.1050 119.98)",
+          "oklch(0.49 0.1050 119.98)",
+          "oklch(0.61 0.1050 119.98)",
+          "oklch(0.72 0.1050 119.98)",
+          "oklch(0.84 0.1050 119.98)",
+          "oklch(0.95 0.1050 119.98)"
+        ]
+      },
+      "sage-ground": {
+        "displayName": "sage ground",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(0.15 0.0155 126.82)",
+          "oklch(0.26 0.0155 126.82)",
+          "oklch(0.38 0.0155 126.82)",
+          "oklch(0.49 0.0155 126.82)",
+          "oklch(0.61 0.0155 126.82)",
+          "oklch(0.72 0.0155 126.82)",
+          "oklch(0.84 0.0155 126.82)",
+          "oklch(0.95 0.0155 126.82)"
+        ]
+      },
+      "page": {
+        "displayName": "page",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(0.15 0.0045 134.85)",
+          "oklch(0.26 0.0045 134.85)",
+          "oklch(0.38 0.0045 134.85)",
+          "oklch(0.49 0.0045 134.85)",
+          "oklch(0.61 0.0045 134.85)",
+          "oklch(0.72 0.0045 134.85)",
+          "oklch(0.84 0.0045 134.85)",
+          "oklch(0.95 0.0045 134.85)"
+        ]
+      },
+      "panel": {
+        "displayName": "panel",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(0.15 0.0000 89.88)",
+          "oklch(0.26 0.0000 89.88)",
+          "oklch(0.38 0.0000 89.88)",
+          "oklch(0.49 0.0000 89.88)",
+          "oklch(0.61 0.0000 89.88)",
+          "oklch(0.72 0.0000 89.88)",
+          "oklch(0.84 0.0000 89.88)",
+          "oklch(0.95 0.0000 89.88)"
+        ]
+      },
+      "ink": {
+        "displayName": "ink",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(0.15 0.0370 167.59)",
+          "oklch(0.26 0.0370 167.59)",
+          "oklch(0.38 0.0370 167.59)",
+          "oklch(0.49 0.0370 167.59)",
+          "oklch(0.61 0.0370 167.59)",
+          "oklch(0.72 0.0370 167.59)",
+          "oklch(0.84 0.0370 167.59)",
+          "oklch(0.95 0.0370 167.59)"
+        ]
+      },
+      "muted": {
+        "displayName": "muted",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(0.15 0.0246 158.03)",
+          "oklch(0.26 0.0246 158.03)",
+          "oklch(0.38 0.0246 158.03)",
+          "oklch(0.49 0.0246 158.03)",
+          "oklch(0.61 0.0246 158.03)",
+          "oklch(0.72 0.0246 158.03)",
+          "oklch(0.84 0.0246 158.03)",
+          "oklch(0.95 0.0246 158.03)"
+        ]
+      },
+      "line": {
+        "displayName": "line",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(0.15 0.0142 138.71)",
+          "oklch(0.26 0.0142 138.71)",
+          "oklch(0.38 0.0142 138.71)",
+          "oklch(0.49 0.0142 138.71)",
+          "oklch(0.61 0.0142 138.71)",
+          "oklch(0.72 0.0142 138.71)",
+          "oklch(0.84 0.0142 138.71)",
+          "oklch(0.95 0.0142 138.71)"
+        ]
+      },
+      "planted": {
+        "displayName": "planted",
+        "role": "secondary",
+        "tonalRamp": [
+          "oklch(0.15 0.1248 130.83)",
+          "oklch(0.26 0.1248 130.83)",
+          "oklch(0.38 0.1248 130.83)",
+          "oklch(0.49 0.1248 130.83)",
+          "oklch(0.61 0.1248 130.83)",
+          "oklch(0.72 0.1248 130.83)",
+          "oklch(0.84 0.1248 130.83)",
+          "oklch(0.95 0.1248 130.83)"
+        ]
+      },
+      "growing": {
+        "displayName": "growing",
+        "role": "secondary",
+        "tonalRamp": [
+          "oklch(0.15 0.0850 151.11)",
+          "oklch(0.26 0.0850 151.11)",
+          "oklch(0.38 0.0850 151.11)",
+          "oklch(0.49 0.0850 151.11)",
+          "oklch(0.61 0.0850 151.11)",
+          "oklch(0.72 0.0850 151.11)",
+          "oklch(0.84 0.0850 151.11)",
+          "oklch(0.95 0.0850 151.11)"
+        ]
+      },
+      "blossom": {
+        "displayName": "blossom",
+        "role": "secondary",
+        "tonalRamp": [
+          "oklch(0.15 0.1109 323.43)",
+          "oklch(0.26 0.1109 323.43)",
+          "oklch(0.38 0.1109 323.43)",
+          "oklch(0.49 0.1109 323.43)",
+          "oklch(0.61 0.1109 323.43)",
+          "oklch(0.72 0.1109 323.43)",
+          "oklch(0.84 0.1109 323.43)",
+          "oklch(0.95 0.1109 323.43)"
+        ]
+      },
+      "needs-care": {
+        "displayName": "needs care",
+        "role": "secondary",
+        "tonalRamp": [
+          "oklch(0.15 0.0834 64.75)",
+          "oklch(0.26 0.0834 64.75)",
+          "oklch(0.38 0.0834 64.75)",
+          "oklch(0.49 0.0834 64.75)",
+          "oklch(0.61 0.0834 64.75)",
+          "oklch(0.72 0.0834 64.75)",
+          "oklch(0.84 0.0834 64.75)",
+          "oklch(0.95 0.0834 64.75)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "headline": {
+        "displayName": "Meeting heading",
+        "purpose": "Compact workspace title"
+      },
+      "label": {
+        "displayName": "Control label",
+        "purpose": "Readable controls and secondary information"
+      }
+    },
+    "shadows": [
+      {
+        "name": "selected-caption",
+        "value": "0 5px 18px #324d2812",
+        "purpose": "Selected caption lift"
+      },
+      {
+        "name": "direct-actions",
+        "value": "0 6px 15px #193e3120",
+        "purpose": "Selected plant action pill"
+      },
+      {
+        "name": "inspector",
+        "value": "0 8px 32px #193e3109",
+        "purpose": "Inspector and plant form"
+      },
+      {
+        "name": "selected-tab",
+        "value": "0 1px 3px #263e2d14",
+        "purpose": "Selected view tab"
+      }
+    ],
+    "motion": [
+      {
+        "name": "botanical-state",
+        "value": "480ms cubic-bezier(.16,1,.3,1)",
+        "purpose": "Botanical crossfade after successful save; disabled for reduced motion"
+      },
+      {
+        "name": "plant-lift-scale",
+        "value": "360ms cubic-bezier(.16,1,.3,1)",
+        "purpose": "Selection lift and size continuity; disabled for reduced motion"
+      },
+      {
+        "name": "inspector-arrive",
+        "value": "180ms cubic-bezier(.16,1,.3,1)",
+        "purpose": "Opacity .5 to 1 and translateY 8px to 0; disabled for reduced motion"
+      },
+      {
+        "name": "control-feedback",
+        "value": "180ms ease",
+        "purpose": "Background, border, and shadow feedback; disabled for reduced motion"
+      },
+      {
+        "name": "root-highlight",
+        "value": "240ms ease",
+        "purpose": "Connected root stroke; disabled for reduced motion"
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "mobile",
+        "value": "700px"
+      },
+      {
+        "name": "inspector-content",
+        "value": "1050px"
+      },
+      {
+        "name": "stacked-inspector",
+        "value": "1100px"
+      },
+      {
+        "name": "compact-desktop",
+        "value": "1200px"
+      },
+      {
+        "name": "wide",
+        "value": "1500px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The main action within a work area.",
+      "html": "<button class=\"ds-primary\">Plant a seed</button>",
+      "css": ".ds-primary{font:650 12px \"Manrope Variable\",sans-serif;background:var(--pine,#193e31);color:white;border:1px solid transparent;border-radius:999px;min-height:44px;padding:11px 17px;cursor:pointer}.ds-primary:hover{background:#2f5741}.ds-primary:focus-visible{outline:3px solid #53752a;outline-offset:3px}.ds-primary{transition:background-color 180ms ease,box-shadow 180ms ease,transform 180ms cubic-bezier(.16,1,.3,1)}.ds-primary:active:not(:disabled){transform:translateY(1px)}.ds-primary:disabled{opacity:.5;cursor:not-allowed}@media(prefers-reduced-motion:reduce){.ds-primary{transition:none}}"
+    },
+    {
+      "name": "Secondary button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Progress check-ins and supporting actions.",
+      "html": "<button class=\"ds-secondary\">Record progress</button>",
+      "css": ".ds-secondary{font:650 12px \"Manrope Variable\",sans-serif;background:white;color:var(--ink,#203a30);border:1px solid #d8e1d4;border-radius:999px;min-height:44px;padding:11px 17px;cursor:pointer}.ds-secondary:hover{background:#edf2e9}.ds-secondary:focus-visible{outline:3px solid #53752a;outline-offset:3px}.ds-secondary{transition:background-color 180ms ease,box-shadow 180ms ease,transform 180ms cubic-bezier(.16,1,.3,1)}.ds-secondary:active:not(:disabled){transform:translateY(1px)}.ds-secondary:disabled{opacity:.5;cursor:not-allowed}@media(prefers-reduced-motion:reduce){.ds-secondary{transition:none}}"
+    },
+    {
+      "name": "Text field",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "A visible label above an editable value.",
+      "html": "<label class=\"ds-label\">Owner<input class=\"ds-field\" value=\"Alex\" /></label>",
+      "css": ".ds-label{font:600 12px \"Manrope Variable\",sans-serif;color:#53674d}.ds-field{display:block;margin-top:7px;font:400 13px \"Manrope Variable\",sans-serif;border:1px solid #dce4d7;border-radius:10px;padding:9px 10px;background:#fcfdfb;color:#31462c;caret-color:#193e31}.ds-field:hover{border-color:#a2b987}.ds-field:focus-visible{outline:3px solid #53752a;outline-offset:3px}"
+    },
+    {
+      "name": "Active navigation",
+      "kind": "nav",
+      "refersTo": "navigation-active",
+      "description": "Citron identifies the current view.",
+      "html": "<nav class=\"ds-nav\"><button class=\"ds-nav-item\" aria-current=\"page\">Meeting grove</button></nav>",
+      "css": ".ds-nav{background:var(--pine,#193e31);padding:16px}.ds-nav-item{font:600 12px \"Manrope Variable\",sans-serif;color:#23422f;background:var(--citron,#d5e999);border:0;border-radius:999px;padding:10px 12px;min-height:46px;width:100%;text-align:left}.ds-nav-item:hover{background:var(--citron,#d5e999)}.ds-nav-item:focus-visible{outline:3px solid #53752a;outline-offset:3px}"
+    },
+    {
+      "name": "Growth status",
+      "kind": "chip",
+      "description": "A text label makes status independent of color.",
+      "html": "<span class=\"ds-status\">Growing</span>",
+      "css": ".ds-status{display:inline-flex;padding:5px 8px;border-radius:999px;background:#e4f0e6;color:#366b46;font:400 12px \"Manrope Variable\",sans-serif}"
+    },
+    {
+      "name": "Inspector panel",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "Floating white inspector with visible facts and progressive edit disclosure.",
+      "html": "<section class=\"ds-panel\"><h2>Seed details</h2><h3>Send the payroll integration checklist</h3><div class=\"ds-facts\"><span><small>Owner</small>Alex</span><span><small>Deadline</small>Not set</span></div><details class=\"ds-edit\"><summary>Edit commitment</summary><label class=\"ds-label\">Owner<input class=\"ds-field\" value=\"Alex\" /></label></details></section>",
+      "css": ".ds-panel{background:white;border:0;border-radius:24px;padding:22px;box-shadow:0 8px 32px #193e3109;color:var(--ink,#203a30);font:400 14px \"Manrope Variable\",sans-serif}.ds-panel h2{font-size:12px;font-weight:650;margin:0 0 20px}.ds-panel h3{font-size:18px;line-height:1.5;letter-spacing:-.45px;font-weight:650;margin:0 0 18px}.ds-facts{display:flex;gap:28px;margin:0 0 18px;font-size:13px}.ds-facts small{display:block;margin-bottom:6px;color:#53664b;font-size:12px}.ds-edit{margin-bottom:20px;font-size:12px}.ds-edit summary{cursor:pointer;color:#53664b;padding:10px 0;text-decoration:underline;text-underline-offset:4px}.ds-edit summary:focus-visible{outline:3px solid #53752a;outline-offset:3px}.ds-label{font:600 12px \"Manrope Variable\",sans-serif;color:#53674d}.ds-field{display:block;margin-top:7px;font:400 13px \"Manrope Variable\",sans-serif;border:1px solid #dce4d7;border-radius:10px;padding:9px 10px;background:#fcfdfb;color:#31462c;caret-color:#193e31}.ds-field:hover{border-color:#a2b987}.ds-field:focus-visible{outline:3px solid #53752a;outline-offset:3px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Living Planting Plan",
+    "overview": "Grovekeeper presents work as a legible garden diagram. A continuous sage ground gives\nmature botanical specimens room, while pill controls and a floating white inspector\nsupport everyday editing.\nThe botanical metaphor communicates state; it does not replace task names or actions.",
+    "keyCharacteristics": [
+      "Pine navigation, continuous sage ground, and floating white work surfaces.",
+      "Natural-history botanical specimens paired with explicit growth labels.",
+      "Calm, locally bundled sans typography and familiar form controls.",
+      "Selection connects the garden to source context and progress actions."
+    ],
+    "rules": [
+      {
+        "name": "The State Has Words Rule",
+        "body": "Every growth color also has a text label and a distinct plant silhouette.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Voice Rule",
+        "body": "Use the same sans family for headings, controls, and data.",
+        "section": "typography"
+      },
+      {
+        "name": "The Quiet Ground Rule",
+        "body": "Keep elevation on controls, selection, and the inspector; the planting ground stays continuous and calm.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do retain visible keyboard focus and native control semantics.",
+      "Do pair plant state with text and silhouette.",
+      "Do distinguish demo data and failed saves from persisted work.",
+      "Do reuse the shared API and input bus for new feature integrations."
+    ],
+    "donts": [
+      "Don't use color alone to explain health or completion.",
+      "Don't refresh seed activity when only its appearance changes.",
+      "Don't replace missing cloud services with an unlabeled mock success.",
+      "Don't introduce decorative motion that competes with meeting tasks."
+    ]
+  }
+}
