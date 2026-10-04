@@ -58,7 +58,8 @@ Still open:
 - **Health timer.** Agreed not to register it for now. The account view does not use the
   seven-day decay; the store methods it needs stay on `feat/health-storage`.
 - **Sample accounts.** Mock mode uses `fixtures.ts`. For the real API, run
-  `scripts/seed_demo_accounts.py` to create the three demo accounts in storage.
+  `scripts/seed_demo_data.py` with the API running. It creates Contoso, Fabrikam and
+  Northwind and ingests emails, a chat and a document for each.
 
 ## For Person D: Ask the Grove
 
