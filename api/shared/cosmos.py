@@ -1,7 +1,8 @@
 """Azure Cosmos DB implementation of `GroveStore`.
 
 Containers `seeds`, `roots`, `utterances` and `sources` all use `/meetingId` as the
-partition key, so every point read, write and query is scoped to one meeting.
+partition key, so meeting reads and writes are scoped to one partition. `accounts` uses
+`/id`. Account-scoped reads of sources and seeds are cross-partition queries.
 """
 import os
 from threading import Lock
@@ -11,11 +12,12 @@ from azure.cosmos import CosmosClient, PartitionKey
 from azure.cosmos.exceptions import CosmosResourceExistsError, CosmosResourceNotFoundError
 from pydantic import ValidationError
 
-from shared.models import Grove, Root, Seed, SeedPatch, Source, Utterance
+from shared.models import Account, Grove, Root, Seed, SeedPatch, Source, Utterance
 from shared.store import StorageNotConfigured, StorageUnavailable
 
 CONTAINERS = ("seeds", "roots", "utterances", "sources")
 PARTITION_KEY_PATH = "/meetingId"
+ACCOUNTS = "accounts"
 
 
 def _clean(document: dict):
@@ -33,6 +35,8 @@ class CosmosStore:
                     id=name, partition_key=PartitionKey(path=PARTITION_KEY_PATH))
                 for name in CONTAINERS
             }
+            self.containers[ACCOUNTS] = database.create_container_if_not_exists(
+                id=ACCOUNTS, partition_key=PartitionKey(path="/id"))
         except AzureError as exc:
             raise StorageUnavailable("Cosmos containers could not be opened") from exc
 
@@ -119,6 +123,31 @@ class CosmosStore:
 
     def get_grove(self, meeting_id: str):
         return Grove(seeds=self.list_seeds(meeting_id), roots=self.list_roots(meeting_id))
+
+    def _query_all(self, container: str, model, account_id: str | None = None):
+        def run():
+            if account_id is None:
+                return list(self.containers[container].query_items(
+                    query="SELECT * FROM c", enable_cross_partition_query=True))
+            return list(self.containers[container].query_items(
+                query="SELECT * FROM c WHERE c.accountId = @accountId",
+                parameters=[{"name": "@accountId", "value": account_id}], enable_cross_partition_query=True))
+        return [self._parse(model, document) for document in self._call(run)]
+
+    def create_account(self, account: Account):
+        return self._create(ACCOUNTS, account)
+
+    def get_account(self, account_id: str):
+        return self._get(ACCOUNTS, Account, account_id, account_id)
+
+    def list_accounts(self):
+        return sorted(self._query_all(ACCOUNTS, Account), key=lambda a: (a.name.lower(), a.id))
+
+    def list_account_sources(self, account_id: str):
+        return self._query_all("sources", Source, account_id)
+
+    def list_account_seeds(self, account_id: str):
+        return self._query_all("seeds", Seed, account_id)
 
 
 DEFAULT_DATABASE_THROUGHPUT = 1000

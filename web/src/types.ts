@@ -9,20 +9,27 @@ export type GroveEvent =
   | { type: 'confirm'; source: InputSource }
   | { type: 'dismiss'; source: InputSource };
 
+export type SeedKind = 'commitment' | 'decision' | 'risk' | 'customer_need';
+export type SourceType = 'meeting' | 'whiteboard' | 'email' | 'chat' | 'document' | 'slack';
+
 export interface Seed {
   id: string;
   meetingId: string;
   text: string;
   owner: string | null;
   deadline: string | null;
-  kind: 'commitment' | 'decision';
+  kind: SeedKind;
   status: 'seed' | 'sprout' | 'bloom' | 'wilted';
   health: number;
-  sourceType: 'meeting' | 'whiteboard' | 'leaves';
+  sourceType: SourceType | 'leaves';
   sourceId: string;
   timestampSec: number | null;
   lastActivity: string;
   size: number;
+  /** Client account this seed belongs to. Absent/null for meetings not linked to an account. */
+  accountId?: string | null;
+  /** The exact source words this seed was extracted from. Absent/null when none was recorded. */
+  quote?: string | null;
 }
 
 export interface Root {
@@ -42,18 +49,33 @@ export interface Utterance {
   via: 'voice' | 'leaves';
 }
 
+/** Non-meeting sources use their own id as meetingId (the storage partition key). */
 export interface Source {
   id: string;
   meetingId: string;
-  type: 'meeting' | 'whiteboard';
+  type: SourceType;
   title: string;
-  blobUrl?: string;
+  blobUrl?: string | null;
   createdAt: string;
+  accountId?: string | null;
+  /** Body of an email, chat, document or Slack thread. Null for meetings (stored as utterances). */
+  text?: string | null;
+}
+
+export interface AccountContact { name: string; role?: string | null; email?: string | null }
+export interface Account {
+  id: string;
+  name: string;
+  aliases: string[];
+  industry: string;
+  contacts: AccountContact[];
 }
 
 export interface Grove { seeds: Seed[]; roots: Root[] }
 export interface SpeechToken { token: string; region: string }
-export interface ExtractRequest { meetingId: string; utterances: Utterance[] }
+export interface ExtractRequest { meetingId: string; utterances: Utterance[]; accountId?: string | null }
+export interface ExtractSourceRequest { source: Source }
+export interface UtteranceList { utterances: Utterance[] }
 export interface WhiteboardRequest { meetingId: string; imageBase64: string }
 export interface WhiteboardResult { text: string; seeds: Seed[] }
 export interface SuggestRequest { meetingId: string; recentText: string }
