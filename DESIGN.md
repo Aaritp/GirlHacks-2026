@@ -123,8 +123,8 @@ least 4.5:1 anywhere on the page. Panels and fields are a near-white leaf green,
 translucent so the forest reads through them; hairlines are a soft green rule. There is no
 pure white surface and no photograph.
 
-The pointer is a pixel-art wand with a star tip (the hotspot). It gains extra sparkles
-over anything that can be pressed. Text fields keep the text caret, disabled controls
+The pointer is a pixel-art wand in forest greens: a pine handle and a leaf-green star tip
+(the hotspot). It gains one small sparkle over anything that can be pressed. Text fields keep the text caret, disabled controls
 keep the not-allowed cursor, and arranging plants keeps grab and grabbing.
 
 **The State Has Words Rule.** Every growth color also has a text label and a distinct plant silhouette.
