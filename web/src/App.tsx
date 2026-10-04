@@ -10,6 +10,8 @@ import { TranscriptPanel } from './transcript/TranscriptPanel';
 import { IngestPanel } from './ingest/IngestPanel';
 import { createIngestApi } from './ingest/api';
 import { createMockIngestApi } from './ingest/mocks';
+import { MeetingAssistant } from './ask';
+import type { Utterance } from './types';
 
 // One API instance for every feature, so extracted seeds land in the grove the forest shows.
 const groveApi = usingMocks ? createMockApi(createForestDemo()) : api;
@@ -25,6 +27,11 @@ function MeetingGrove({ meetingId: initialMeetingId, accountId }: { meetingId: s
   const [userName, setUserName] = useState('');
   const meetingClock = useCallback(() => (Date.now() - meetingStartedAt) / 1000, [meetingStartedAt]);
   const [revision, setRevision] = useState(0);
+  const [utterances, setUtterances] = useState<Utterance[]>([]);
+  const [leavesUtterances, setLeavesUtterances] = useState<Utterance[]>([]);
+  const onLeavesStarted = useCallback((utterance: Utterance) => {
+    setLeavesUtterances((current) => [...current.filter((line) => line.id !== utterance.id), utterance].slice(-200));
+  }, []);
   const reloadGrove = useCallback(() => setRevision((value) => value + 1), []);
 
   return (
@@ -40,10 +47,13 @@ function MeetingGrove({ meetingId: initialMeetingId, accountId }: { meetingId: s
           : <>
             {accountId && <p><a href={`?account=${encodeURIComponent(accountId)}`}>Back to this meeting's client account</a></p>}
             <TranscriptPanel api={groveApi} meetingId={meetingId} accountId={accountId} onSeedsExtracted={reloadGrove}
-              meetingStartedAt={meetingStartedAt} userName={userName} onUserNameChange={setUserName} />
+              meetingStartedAt={meetingStartedAt} userName={userName} onUserNameChange={setUserName}
+              onUtterancesChange={setUtterances} />
+            <MeetingAssistant key={meetingId} api={groveApi} accountsApi={accountsApi}
+              meetingId={meetingId} accountId={accountId} utterances={[...utterances, ...leavesUtterances]} mockMode={usingMocks} />
             {userName.trim() && <LeavesPanel key={meetingId + ':' + userName} api={groveApi}
               meetingId={meetingId} accountId={accountId} speaker={userName} getStartSec={meetingClock}
-              onSeeds={reloadGrove} mockMode={usingMocks} />}
+              onSeeds={reloadGrove} mockMode={usingMocks} onUtteranceStarted={onLeavesStarted} />}
           </>}
       </ForestWorkspace>}
     </>

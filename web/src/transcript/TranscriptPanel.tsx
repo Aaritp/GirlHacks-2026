@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import type { GroveApi } from '../api/contracts';
 import { demoUtterances } from '../api/fixtures';
-import type { Seed } from '../types';
+import type { Seed, Utterance } from '../types';
 import { browserEnvironment, checkTabCaptureSupport, type AudioChannel } from './capture';
 import { startOnlineCapture, type OnlineCapture, type SessionEndReason } from './online';
 import {
@@ -23,6 +23,8 @@ interface Props {
   onUserNameChange?: (name: string) => void;
   /** Called after extraction saves seeds so the forest can reload the grove. */
   onSeedsExtracted?: (seeds: Seed[]) => void;
+  /** Finalized lines (including pending saves) for the read-only meeting assistant. */
+  onUtterancesChange?: (utterances: Utterance[]) => void;
 }
 
 interface Notice { text: string; kind: 'status' | 'alert' }
@@ -69,7 +71,7 @@ function SpeakerRename({ label, onRename }: { label: string; onRename: (name: st
 }
 
 export function TranscriptPanel({
-  api, meetingId, accountId = null, meetingStartedAt, userName: sharedName, onUserNameChange, onSeedsExtracted,
+  api, meetingId, accountId = null, meetingStartedAt, userName: sharedName, onUserNameChange, onSeedsExtracted, onUtterancesChange,
 }: Props) {
   const [snapshot, setSnapshot] = useState<TranscriptSnapshot>(EMPTY);
   const [partials, setPartials] = useState<Partial<Record<AudioChannel, string>>>({});
@@ -92,6 +94,11 @@ export function TranscriptPanel({
   const meetingSeconds = () => (Date.now() - (sharedClock.current ?? (startedAt.current ??= Date.now()))) / 1000;
   const notified = useRef(onSeedsExtracted);
   notified.current = onSeedsExtracted;
+  const transcriptChanged = useRef(onUtterancesChange);
+  transcriptChanged.current = onUtterancesChange;
+  useEffect(() => {
+    transcriptChanged.current?.(snapshot.entries.map(({ utterance }) => utterance));
+  }, [snapshot.entries]);
   const unsupported = useMemo(() => checkTabCaptureSupport(browserEnvironment()), []);
 
   useEffect(() => {
