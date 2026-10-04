@@ -30,7 +30,7 @@ new objects and retain IDs when retrying.
 | GET | `/health` | — | `{ status, service, stage }` |
 | POST | `/speech-token` | — | `{ token, region }` |
 | POST | `/utterances` | `Utterance` | Saved `Utterance` |
-| POST | `/extract` | `{ meetingId, utterances: Utterance[], accountId? }` | `{ seeds: Seed[], roots: Root[] }` |
+| POST | `/extract` | `{ meetingId, utterances: Utterance[], accountId? }` | `{ seeds, roots, completions }` |
 | GET | `/meetings/{meetingId}/utterances` | — | `{ utterances: Utterance[] }` ordered by `startSec` |
 | GET | `/accounts` | — | `Account[]` sorted by name |
 | POST | `/accounts` | `Account` | Saved `Account` (201); 409 if the id exists |
@@ -71,6 +71,19 @@ new objects and retain IDs when retrying.
   Compose accepts user-spelled words too; it returns a preview and never triggers TTS.
 - Features always call the `GroveApi` interface. Browser mocks retain changes for that
   instance only; reset by reloading. HTTP never silently falls back to mock success.
+
+## Self-updating commitments
+
+- `/extract` sends the window's open commitments (the account's when the meeting is linked to
+  one, else the meeting's; up to 40, most recent first) to the model, which may report that one is
+  finished. Each returned `completions[]` entry is `{ seedId, meetingId, seedText, evidenceQuote,
+  sourceId, sourceType, timestampSec }`: it names an offered open commitment and its evidence quote
+  is verbatim in the window. Anything else is dropped.
+- Completions are suggestions only; extraction never changes an existing seed. On the user's Yes,
+  the client sends `PATCH /seeds/{seedId}?meetingId={meetingId}` with `status: "bloom"`,
+  `lastActivity`, and `completedBy: { sourceId, sourceType, quote, timestampSec }`. Reopening may
+  send `completedBy: null`.
+- `/ingest` (text sources) does not suggest completions yet.
 
 ## Accounts and text sources
 

@@ -83,7 +83,7 @@ FIRST_WINDOW = [
 
 def test_transcript_to_saved_seed_flow(backend, openai_env):
     fake = FakeModel(FIRST_WINDOW)
-    openai_env.setattr(model, "call_model", fake)
+    openai_env.setattr(model, "call_extraction", fake)
     for entry in TRANSCRIPT[:2]:
         assert HANDLERS["save_utterance"](http(entry.model_dump(mode="json"))).status_code == 200
     response = HANDLERS["extract"](http({"meetingId": MEETING, "utterances": dump(TRANSCRIPT[:2])}))
@@ -199,7 +199,7 @@ def test_missing_openai_settings_returns_503_without_saving(backend, monkeypatch
 def test_model_failure_is_502_and_creates_no_seeds(backend, openai_env):
     def failing(window):
         raise model.ModelFailed("timeout")
-    openai_env.setattr(model, "call_model", failing)
+    openai_env.setattr(model, "call_extraction", failing)
     response = HANDLERS["extract"](http({"meetingId": MEETING, "utterances": dump(TRANSCRIPT[:1])}))
     assert response.status_code == 502
     assert body(response)["error"]["code"] == "UPSTREAM_ERROR"
@@ -211,7 +211,7 @@ def test_storage_failure_is_503_not_success(openai_env):
     use_store(CosmosStore(database))
     try:
         database.containers["seeds"].fail_with = service_error()
-        openai_env.setattr(model, "call_model", FakeModel(FIRST_WINDOW))
+        openai_env.setattr(model, "call_extraction", FakeModel(FIRST_WINDOW))
         response = HANDLERS["extract"](http({"meetingId": MEETING, "utterances": dump(TRANSCRIPT[:2])}))
         assert response.status_code == 503
         assert body(response)["error"]["code"] == "STORAGE_UNAVAILABLE"

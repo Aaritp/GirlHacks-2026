@@ -1,4 +1,4 @@
-import type { Grove, Seed, Utterance } from '../types';
+import type { CompletionSuggestion, Grove, Seed, Utterance } from '../types';
 import { ApiError, type GroveApi } from './contracts';
 import { demoGrove, demoSuggestions } from './fixtures';
 
@@ -28,7 +28,24 @@ export function createMockApi(initial: Grove = demoGrove): GroveApi {
       if (input.some((item) => item.meetingId !== meetingId)) {
         throw new ApiError(400, 'INVALID_REQUEST', 'All utterances must belong to the requested meeting.');
       }
-      // Deterministic development behavior: one seed per supplied utterance, no inferred promises.
+      // Deterministic development behavior (not AI): a line saying something is done/sent/finished
+      // suggests completing an open commitment that shares at least two significant words with it.
+      const words = (text: string) => new Set(text.toLowerCase().match(/[a-z0-9]{4,}/g) ?? []);
+      const open = [...seeds.values()].filter((seed) => seed.kind === 'commitment' && seed.status !== 'bloom'
+        && (accountId ? seed.accountId === accountId : seed.meetingId === meetingId));
+      const completions: CompletionSuggestion[] = [];
+      for (const item of input) {
+        if (!/\b(done|finished|completed?|sent|delivered)\b/i.test(item.text)) continue;
+        const said = words(item.text);
+        const match = open.find((seed) => !completions.some((c) => c.seedId === seed.id)
+          && [...words(seed.text)].filter((word) => said.has(word)).length >= 2);
+        if (match) {
+          completions.push({ seedId: match.id, meetingId: match.meetingId, seedText: match.text,
+            evidenceQuote: item.text, sourceId: meetingId, sourceType: item.via === 'leaves' ? 'leaves' : 'meeting',
+            timestampSec: item.startSec });
+        }
+      }
+      // One seed per supplied utterance, no inferred promises.
       for (const item of input) {
         const id = `mock-${item.id}`;
         if (!seeds.has(key(meetingId, id))) {
@@ -42,7 +59,7 @@ export function createMockApi(initial: Grove = demoGrove): GroveApi {
         }
       }
       const ids = new Set(input.map((item) => `mock-${item.id}`));
-      return { seeds: grove(meetingId).seeds.filter((seed) => ids.has(seed.id)), roots: [] };
+      return { seeds: grove(meetingId).seeds.filter((seed) => ids.has(seed.id)), roots: [], completions };
     },
     async getUtterances(meetingId) {
       return structuredClone({
@@ -61,9 +78,9 @@ export function createMockApi(initial: Grove = demoGrove): GroveApi {
       const current = seeds.get(identity);
       if (!current) throw new ApiError(404, 'NOT_FOUND', 'Seed not found.');
       // Mirror the wire contract even if a caller bypasses TypeScript.
-      const allowed = new Set(['text', 'owner', 'deadline', 'kind', 'status', 'health', 'lastActivity', 'size']);
+      const allowed = new Set(['text', 'owner', 'deadline', 'kind', 'status', 'health', 'lastActivity', 'size', 'completedBy']);
       if (!Object.keys(patch).length || Object.entries(patch).some(([field, value]) =>
-        value === null && field !== 'owner' && field !== 'deadline')) {
+        value === null && field !== 'owner' && field !== 'deadline' && field !== 'completedBy')) {
         throw new ApiError(400, 'INVALID_REQUEST', 'Provide a non-empty patch; only owner and deadline may be null.');
       }
       if (Object.keys(patch).some((field) => !allowed.has(field))) {

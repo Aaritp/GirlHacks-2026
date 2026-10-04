@@ -29,6 +29,10 @@ so renames never touch other sessions' seeds.
   seeds. Any session end triggers the final extraction. "Play fixture transcript"
   feeds `../api/fixtures.ts` through the same path for development without a call.
 
+Self-updating commitments: when extraction reports that an open commitment is finished ("the
+checklist is done"), the panel asks "Mark '…' as done?" with the evidence quote. Yes blooms the seed
+and records `completedBy`; No dismisses it for the session. Nothing is closed without Yes.
+
 `TranscriptPanel` props for app integration (all optional):
 - `accountId` links the meeting to a client account (sent with every extraction).
 - `meetingStartedAt` is an app-owned meeting clock (ms since epoch) so transcript lines and

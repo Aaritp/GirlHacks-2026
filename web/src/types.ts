@@ -30,6 +30,28 @@ export interface Seed {
   accountId?: string | null;
   /** The exact source words this seed was extracted from. Absent/null when none was recorded. */
   quote?: string | null;
+  /** Set when a user confirms a suggested completion; null after reopening. */
+  completedBy?: CompletedBy | null;
+}
+
+/** The source that showed a commitment was finished. */
+export interface CompletedBy {
+  sourceId: string;
+  sourceType: Seed['sourceType'];
+  quote: string;
+  timestampSec?: number | null;
+}
+
+/** An open commitment the transcript says is done. A suggestion only: the user confirms it. */
+export interface CompletionSuggestion {
+  seedId: string;
+  /** The seed's partition, for updateSeed(meetingId, seedId, ...). */
+  meetingId: string;
+  seedText: string;
+  evidenceQuote: string;
+  sourceId: string;
+  sourceType: Seed['sourceType'];
+  timestampSec: number | null;
 }
 
 export interface Root {
@@ -72,6 +94,7 @@ export interface Account {
 }
 
 export interface Grove { seeds: Seed[]; roots: Root[] }
+export interface ExtractResult extends Grove { completions?: CompletionSuggestion[] }
 export interface SpeechToken { token: string; region: string }
 export interface ExtractRequest { meetingId: string; utterances: Utterance[]; accountId?: string | null }
 export interface UtteranceList { utterances: Utterance[] }
@@ -83,6 +106,6 @@ export interface ComposeRequest { meetingId: string; picked: string[] }
 export interface ComposeResult { sentence: string }
 /** IDs and source provenance are immutable; meetingId travels in the PATCH query. */
 export type SeedPatch = Partial<Pick<Seed,
-  'text' | 'owner' | 'deadline' | 'kind' | 'status' | 'health' | 'lastActivity' | 'size'
+  'text' | 'owner' | 'deadline' | 'kind' | 'status' | 'health' | 'lastActivity' | 'size' | 'completedBy'
 >>;
 export interface ApiErrorBody { error: { code: string; message: string } }

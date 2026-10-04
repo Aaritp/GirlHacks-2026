@@ -91,4 +91,31 @@ describe('TranscriptPanel', () => {
     await waitFor(() => expect(api.extract).toHaveBeenCalled());
     expect(api.extract.mock.calls[0][0]).toMatchObject({ meetingId: MEETING, accountId: 'acct-northwind' });
   });
+
+  it('asks before marking a commitment done and reloads the forest after Yes', async () => {
+    const api = createMockApi({ seeds: [{
+      id: 'open-1', meetingId: 'demo-meeting', text: 'Send the payroll integration checklist', owner: 'Alex',
+      deadline: null, kind: 'commitment', status: 'sprout', health: 1, sourceType: 'meeting',
+      sourceId: 'demo-meeting', timestampSec: 3, lastActivity: '2026-10-01T13:00:00Z', size: 1 }], roots: [] });
+    const updateSeed = vi.spyOn(api, 'updateSeed');
+    const onSeedsExtracted = vi.fn();
+    // The fixture transcript has no "done" line, so feed one through the session via the fixture path.
+    const { demoUtterances } = await import('../api/fixtures');
+    demoUtterances.push({ id: 'done-1', meetingId: 'demo-meeting', speaker: 'Alex',
+      text: 'The payroll integration checklist is done and sent.', startSec: 50, via: 'voice' });
+    try {
+      render(<TranscriptPanel api={api} meetingId="demo-meeting" onSeedsExtracted={onSeedsExtracted} />);
+      fireEvent.click(screen.getByRole('button', { name: /play fixture transcript/i }));
+      expect(await screen.findByText(/as done\?/)).toBeTruthy();
+      expect(updateSeed).not.toHaveBeenCalled();
+      onSeedsExtracted.mockClear();
+      fireEvent.click(screen.getByRole('button', { name: /yes, mark done/i }));
+      await waitFor(() => expect(updateSeed).toHaveBeenCalledWith('demo-meeting', 'open-1',
+        expect.objectContaining({ status: 'bloom' })));
+      await waitFor(() => expect(onSeedsExtracted).toHaveBeenCalled());
+      expect(screen.queryByText(/as done\?/)).toBeNull();
+    } finally {
+      demoUtterances.pop();
+    }
+  });
 });

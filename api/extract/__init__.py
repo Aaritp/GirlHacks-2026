@@ -15,7 +15,7 @@ def _run(extraction):
     """Shared error mapping. Never returns partial or mock success when a service fails."""
     try:
         model.model_settings()
-        grove = extraction()
+        result = extraction()
     except model.ModelNotConfigured as exc:
         return error_response(503, "SERVICE_NOT_CONFIGURED", str(exc))
     except model.ModelFailed as exc:
@@ -23,7 +23,7 @@ def _run(extraction):
         return error_response(502, "UPSTREAM_ERROR", "Azure OpenAI extraction failed; nothing was extracted.")
     except SourceConflict as exc:
         return error_response(409, "CONFLICT", str(exc))
-    return json_response(grove.model_dump(mode="json"))
+    return json_response(result.model_dump(mode="json"))
 
 
 @bp.route(route="extract", methods=["POST"])
@@ -32,5 +32,5 @@ def _run(extraction):
 def extract(req: func.HttpRequest):
     request = ExtractRequest.model_validate(req.get_json())
     store = get_store()
-    return _run(lambda: extract_and_save(store, request.meetingId, request.utterances, model.call_model,
+    return _run(lambda: extract_and_save(store, request.meetingId, request.utterances, model.call_extraction,
                                          account_id=request.accountId))
