@@ -27,7 +27,7 @@ body::before {
   content: ''; position: fixed; inset: 0; z-index: -2; pointer-events: none;
   background:
     radial-gradient(ellipse 46% 40% at 30% 8%, #fffbdcf2 0%, #fbf8d680 42%, transparent 72%),
-    url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 1440 400%22 preserveAspectRatio=%22none%22%3E%3Cdefs%3E%3ClinearGradient id=%22a%22 x1=%220%22 y1=%220%22 x2=%220%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%23cfe6cd%22/%3E%3Cstop offset=%221%22 stop-color=%22%23e3f1df%22/%3E%3C/linearGradient%3E%3ClinearGradient id=%22b%22 x1=%220%22 y1=%220%22 x2=%220%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%23bcdcbd%22/%3E%3Cstop offset=%221%22 stop-color=%22%23d9ecd6%22/%3E%3C/linearGradient%3E%3ClinearGradient id=%22c%22 x1=%220%22 y1=%220%22 x2=%220%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%23abd1ad%22/%3E%3Cstop offset=%221%22 stop-color=%22%23cbe4c9%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath fill=%22url%28%23a%29%22 d=%22M0 400V190a86 77 0 0 1 172 0a51 26 0 0 1 102 0a91.5 67 0 0 1 183 0a72 36 0 0 1 144 0a53.5 31 0 0 1 107 0a52.5 44 0 0 1 105 0v-2a52.5 39 0 0 1 105 0a73 37 0 0 1 146 0a82 54 0 0 1 164 0a84 61 0 0 1 168 0a58 43 0 0 1 116 0V400z%22/%3E%3Cpath fill=%22url%28%23b%29%22 d=%22M0 400V250a45.5 30 0 0 1 91 0a53 37 0 0 1 106 0v12a86.5 78 0 0 1 173 0v15a50 41 0 0 1 100 0v9a39 21 0 0 1 78 0a93.5 54 0 0 1 187 0v8a74 50 0 0 1 148 0a69.5 49 0 0 1 139 0v5a36 20 0 0 1 72 0a42.5 36 0 0 1 85 0v-8a70 56 0 0 1 140 0a44.5 25 0 0 1 89 0v-3a39.5 33 0 0 1 79 0v-14V400z%22/%3E%3Cpath fill=%22url%28%23c%29%22 d=%22M0 400V310a63.5 40 0 0 1 127 0v-7a31.5 27 0 0 1 63 0a34 23 0 0 1 68 0a36 27 0 0 1 72 0a36 22 0 0 1 72 0a79.5 44 0 0 1 159 0a33.5 22 0 0 1 67 0a75 64 0 0 1 150 0a40.5 30 0 0 1 81 0a48.5 31 0 0 1 97 0v0a64 36 0 0 1 128 0v8a55 40 0 0 1 110 0v7a37 27 0 0 1 74 0a58 35 0 0 1 116 0v-5a42.5 35 0 0 1 85 0V400z%22/%3E%3C/svg%3E") center bottom / 100% min(46vh, 430px) no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 1440 400%22 preserveAspectRatio=%22none%22%3E%3Cdefs%3E%3ClinearGradient id=%22a%22 x1=%220%22 y1=%220%22 x2=%220%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%23cfe6cd%22/%3E%3Cstop offset=%221%22 stop-color=%22%23e3f1df%22/%3E%3C/linearGradient%3E%3Cfilter id=%22fa%22 x=%22-5%25%22 y=%22-30%25%22 width=%22110%25%22 height=%22160%25%22%3E%3CfeGaussianBlur stdDeviation=%227%22/%3E%3C/filter%3E%3ClinearGradient id=%22b%22 x1=%220%22 y1=%220%22 x2=%220%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%23bcdcbd%22/%3E%3Cstop offset=%221%22 stop-color=%22%23d9ecd6%22/%3E%3C/linearGradient%3E%3Cfilter id=%22fb%22 x=%22-5%25%22 y=%22-30%25%22 width=%22110%25%22 height=%22160%25%22%3E%3CfeGaussianBlur stdDeviation=%224.5%22/%3E%3C/filter%3E%3ClinearGradient id=%22c%22 x1=%220%22 y1=%220%22 x2=%220%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%23abd1ad%22/%3E%3Cstop offset=%221%22 stop-color=%22%23cbe4c9%22/%3E%3C/linearGradient%3E%3Cfilter id=%22fc%22 x=%22-5%25%22 y=%22-30%25%22 width=%22110%25%22 height=%22160%25%22%3E%3CfeGaussianBlur stdDeviation=%222.5%22/%3E%3C/filter%3E%3C/defs%3E%3Cpath fill=%22url%28%23a%29%22 filter=%22url%28%23fa%29%22 d=%22M-40 400V190a86 77 0 0 1 172 0a51 26 0 0 1 102 0a91.5 67 0 0 1 183 0a72 36 0 0 1 144 0a53.5 31 0 0 1 107 0a52.5 44 0 0 1 105 0v-2a52.5 39 0 0 1 105 0a73 37 0 0 1 146 0a82 54 0 0 1 164 0a84 61 0 0 1 168 0a58 43 0 0 1 116 0a92.5 48 0 0 1 185 0V400z%22/%3E%3Cpath fill=%22url%28%23b%29%22 filter=%22url%28%23fb%29%22 d=%22M-40 400V250a45.5 30 0 0 1 91 0a53 37 0 0 1 106 0v12a86.5 78 0 0 1 173 0v15a50 41 0 0 1 100 0v9a39 21 0 0 1 78 0a93.5 54 0 0 1 187 0v8a74 50 0 0 1 148 0a69.5 49 0 0 1 139 0v5a36 20 0 0 1 72 0a42.5 36 0 0 1 85 0v-8a70 56 0 0 1 140 0a44.5 25 0 0 1 89 0v-3a39.5 33 0 0 1 79 0v-14a42.5 31 0 0 1 85 0V400z%22/%3E%3Cpath fill=%22url%28%23c%29%22 filter=%22url%28%23fc%29%22 d=%22M-40 400V310a63.5 40 0 0 1 127 0v-7a31.5 27 0 0 1 63 0a34 23 0 0 1 68 0a36 27 0 0 1 72 0a36 22 0 0 1 72 0a79.5 44 0 0 1 159 0a33.5 22 0 0 1 67 0a75 64 0 0 1 150 0a40.5 30 0 0 1 81 0a48.5 31 0 0 1 97 0v0a64 36 0 0 1 128 0v8a55 40 0 0 1 110 0v7a37 27 0 0 1 74 0a58 35 0 0 1 116 0v-5a42.5 35 0 0 1 85 0a79.5 70 0 0 1 159 0V400z%22/%3E%3C/svg%3E") center bottom / 100% min(46vh, 430px) no-repeat,
     linear-gradient(180deg, #f1f8e6 0%, #e4f1df 34%, #d8ecd6 62%, #cfe6cd 100%);
 }
 /* Fireflies: a handful of soft lights drifting in the lower mist. */
@@ -117,4 +117,86 @@ nav[aria-label="Workspaces"] button:hover { color: #203a30; }
 .workspace-extension section[aria-labelledby="transcript-heading"] :is(input, select, textarea) {
   min-height: 40px; padding: 7px 10px; border: 1px solid var(--rule); border-radius: 10px;
   background: #f7fbf1; color: #203a30; caret-color: #183b32;
+}
+
+/*
+ * Type. Forum keeps the display headings and Manrope the wordmark; all smaller text is
+ * Museo. Museo is a licensed typeface, so it is not bundled: it is used when installed or
+ * served (for example through an Adobe Fonts kit). Aleo, its closest free relative, is the
+ * bundled fallback. font-size-adjust keeps its lowercase the same optical size Forum had.
+ */
+:root { font-family: 'Museo', 'Aleo Variable', 'Forum', serif; font-size-adjust: .47; font-weight: 400; }
+button, input, textarea, select { font-family: inherit; }
+h1, h2, h3, .account-name, .care-note p, .ingest-panel h1, .ingest-panel h2 {
+  font-family: 'Forum', serif; font-size-adjust: none; font-weight: 400;
+}
+.brand { font-family: 'Manrope Variable', sans-serif; font-size-adjust: none; }
+.ingest-panel, .ask-box, .ask-context { font-family: inherit; }
+.ingest-panel label, .ask-box label { font-weight: 500; }
+.ask-eyebrow { font-weight: 500; }
+code { font-family: inherit; font-size: 1em; }
+
+/*
+ * Softness. No hard boxes: panels lose their outlines and sit on a feathered shadow,
+ * controls are pills, hover washes are rounded, and rules fade out at both ends.
+ */
+.ask-box, .ask-context, .ingest-panel section, .ingest-panel article {
+  border: 0; border-radius: 30px;
+  background: linear-gradient(180deg, #f6fbf0e6, #edf6e8cc);
+  box-shadow: 0 1px 0 #ffffffb3 inset, 0 24px 60px -34px #183b3259;
+}
+.ask-scope, .ask-demo { border-radius: 999px; padding: .45rem .95rem; }
+.ask-box textarea, .ingest-panel textarea { border-radius: 20px; }
+.ask-box textarea, .ingest-panel :is(input, select, textarea),
+.workspace-extension section[aria-labelledby="transcript-heading"] :is(input, select, textarea),
+.seed-edit input, .seed-edit textarea, .plant-form input, .plant-form textarea {
+  border: 1px solid #b2cdb499; border-radius: 16px; box-shadow: 0 1px 2px #183b320d inset;
+  transition: border-color 200ms ease, box-shadow 200ms ease, background-color 200ms ease;
+}
+.ask-box textarea:focus, .ingest-panel :is(input, select, textarea):focus,
+.seed-edit :is(input, textarea):focus, .plant-form :is(input, textarea):focus { border-color: #86a88c; box-shadow: 0 0 0 4px #b9dc8c59; }
+.ask-answer { border-left: 0; border-radius: 22px; background: #fbfdf6cc; }
+.ask-source, .ask-context-card { border: 0; border-radius: 22px; box-shadow: 0 14px 36px -26px #183b324d; }
+.ask-source blockquote, .ingest-panel blockquote, .account-detail blockquote {
+  border: 0; margin-inline: 0; padding: 12px 16px; border-radius: 16px; background: #dcecd699;
+}
+.ask-source-text, .ask-transcript { border-radius: 16px; }
+.ask-transcript li { border-radius: 12px; }
+.ask-transcript [aria-current="location"] { border-left: 0; }
+.ask-voice > button { border-radius: 999px; padding-inline: 1.1rem; }
+.ask-error, .ingest-error, .ingest-notice, .error-banner, .help-panel { border-radius: 18px; }
+.error-banner { border: 0; }
+
+/* Ingestion's buttons join the rest: brushed-metal pills. */
+.ingest-panel button {
+  border-radius: 999px; padding-inline: 18px; border: 1px solid #94aa9866;
+  background: var(--metal-surface); box-shadow: inset 0 1px 0 #dce8d64d, 0 5px 12px #142f2912;
+  transition: box-shadow 180ms ease, transform 180ms cubic-bezier(.16,1,.3,1);
+}
+.ingest-panel button:hover:not(:disabled) { box-shadow: inset 0 1px 0 #e4eed48c, 0 6px 16px #142f2926; }
+.ingest-panel button:active:not(:disabled) { transform: translateY(1px); }
+
+/* Sidebar and row hovers are rounded washes, not rectangles. */
+.nav-item, .stage-filter { border-radius: 18px; }
+.workspace-monogram { border-radius: 12px; }
+.timeline-item, .account-card, .seed-row, .connection-link { border-radius: 18px; transition: background-color 200ms ease; }
+.account-table tbody tr { transition: background-color 200ms ease; }
+.account-table tbody tr > :first-child { border-top-left-radius: 16px; border-bottom-left-radius: 16px; padding-left: 12px; }
+.account-table tbody tr > :last-child { border-top-right-radius: 16px; border-bottom-right-radius: 16px; }
+.account-table tbody tr:hover { background: #c2ddc466; }
+.source-icon { box-shadow: 0 1px 0 #ffffff99 inset; }
+
+/* Rules: row dividers nearly dissolve; section rules fade out toward both ends. */
+.timeline-item, .account-card, .seed-row, .connection-link, .source-seeds li,
+.account-table th, .account-table td { border-bottom-color: #b2cdb466; }
+.account-list { border-top-color: #b2cdb466; }
+.account-toolbar, .workspace-extension, .search-box, .account-toolbar select, .list-head, .note-size {
+  border-image: linear-gradient(90deg, transparent, #86a88c 10%, #86a88c 90%, transparent) 1;
+}
+.account-section::before { background: linear-gradient(90deg, transparent, #86a88c 10%, #86a88c 90%, transparent); }
+
+/* The data-clearing control in the workspace bar keeps its warning colour but loses the box. */
+nav[aria-label="Workspaces"] section[aria-labelledby="clear-all-heading"] { border-radius: 22px !important; border-color: #c0392b66 !important; background: #fff4eecc; }
+nav[aria-label="Workspaces"] section[aria-labelledby="clear-all-heading"] button {
+  border: 1px solid #c0392b66; border-bottom: 1px solid #c0392b66; border-radius: 999px; padding: 6px 14px; margin: 6px 0 0; min-height: 40px; color: #8a2a1f; font-size: 16px;
 }

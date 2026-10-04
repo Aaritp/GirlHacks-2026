@@ -131,12 +131,17 @@ keep the not-allowed cursor, and arranging plants keeps grab and grabbing.
 
 ## Typography
 
-Forum (regular 400 only) is bundled locally and carries headings, controls, and data.
-Because it has a single weight, hierarchy comes from size, not boldness: the headline
-runs 36-48px, section titles 25-28px, body and controls 17-18px, and nothing drops
-below 14px. Manrope Variable is kept for the grovekeeper wordmark in the rail only.
+Three voices, each with one job. Forum (regular only) sets the display headings: page
+titles, section titles and seed titles in the details panel. Museo sets all smaller text:
+body, labels, controls, captions and data. Manrope Variable is kept for the grovekeeper
+wordmark only.
 
-**The One Voice Rule.** Use Forum everywhere except the wordmark; never fake a bold.
+Museo is a licensed typeface and is not bundled. The stack names it first, so it is used
+wherever it is installed or served (for example through an Adobe Fonts kit); Aleo
+Variable, its closest free relative, is bundled as the fallback. `font-size-adjust` keeps
+the smaller text at the optical size the layout was drawn for.
+
+**The Three Voices Rule.** Forum for headings, Museo for everything smaller, Manrope for the wordmark. Never fake a bold in Forum.
 
 ## Layout
 
@@ -169,6 +174,12 @@ itself stays flat and uninterrupted.
 **The Quiet Ground Rule.** Keep elevation on controls, selection, and the inspector; the planting ground stays continuous and calm.
 
 ## Shapes
+
+Nothing is boxed. Panels have no outline: they are large-radius (30px) translucent leaf
+surfaces on a feathered shadow. Controls are pills, fields have 16-20px corners and a
+soft focus glow, hover washes on rows and navigation are rounded, quotes sit on a soft
+tint instead of a side stripe, and section rules fade out toward both ends.
+
 
 Actions, navigation, filters, and status tags use pills. White work surfaces and the
 pine rail share the panel radius; the broad garden has larger corners (28px, matching
