@@ -85,8 +85,9 @@ def test_results_are_copies(backend):
 def test_cosmos_uses_meeting_partition_and_strips_system_fields():
     database = FakeDatabase()
     backend = CosmosStore(database)
-    assert set(database.containers) == {"seeds", "roots", "utterances", "sources"}
-    assert all(container.field == "meetingId" for container in database.containers.values())
+    assert set(database.containers) == {"seeds", "roots", "utterances", "sources", "accounts"}
+    assert {name: c.field for name, c in database.containers.items()} == {
+        "seeds": "meetingId", "roots": "meetingId", "utterances": "meetingId", "sources": "meetingId", "accounts": "id"}
     backend.create_seed(make_seed())
     assert "_etag" in database.containers["seeds"].items[("meeting-a", "seed-1")]
     assert backend.list_seeds("meeting-a") == [make_seed()]
@@ -198,7 +199,7 @@ def test_database_gets_shared_throughput_and_containers_get_none(clean_env):
     calls = cosmos_env(clean_env, existing=database)
     get_store()
     assert calls == [{"offer_throughput": 1000}]
-    assert set(database.container_options) == {"seeds", "roots", "utterances", "sources"}
+    assert set(database.container_options) == {"seeds", "roots", "utterances", "sources", "accounts"}
     # No per-container throughput, so every container shares the database's RU/s.
     assert all(options == {} for options in database.container_options.values())
 

@@ -7,8 +7,8 @@ compose, edit, confirm, and speak with mouse and keyboard.
 
 This branch contains the **shared foundation, Person C's forest workspace, and Whispering Leaves**.
 The forest includes garden/list views, editable seeds, progress actions, dependency
-roots, shared-input handling, and seed-health logic. Account types/storage and
-online tab-audio capture are pending shared-team integration. Slack is the only
+roots, shared-input handling, and seed-health logic. The shared account backend, account dashboard, and online tab-audio capture are
+integrated from main. Slack is the only
 planned live content connector; email/chat/docs use paste or upload. Hand/head
 tracking and in-person capture are outside the new product scope.
 Shared contracts, fixtures, a typed API client, one input bus,
@@ -23,7 +23,8 @@ npm ci
 npm run dev
 ```
 
-Open the local URL printed by Vite. Development uses browser mocks by default and
+Open the local URL printed by Vite. Use `/?accounts` for client accounts or `/`
+for the meeting grove with transcript and Leaves. Development uses browser mocks by default and
 shows a sample garden. Changes in demo mode reset on reload. No Azure account is needed. To configure explicitly, copy
 `web/.env.example` to `web/.env`. Changes to environment settings require a restart.
 
@@ -73,17 +74,18 @@ Speech tokens and extraction need their `AZURE_SPEECH_*` / `AZURE_OPENAI_*` sett
 return 503 `SERVICE_NOT_CONFIGURED` without them. Leaves suggestions use the shared
 utterance repository and Azure OpenAI; composition preserves arbitrary spelling and
 returns an editable preview. Azure Speech playback requires explicit confirmation.
-Whiteboard OCR is retained as inactive backup code and is not mounted in the app
-or included in the active demo. See [demo/services.md](demo/services.md) for configuration.
+Whiteboard OCR has been dropped. See [demo/services.md](demo/services.md) for
+Leaves configuration. Enter Your name in the transcript panel to enable Leaves;
+both panels share that name and one meeting clock.
 Browser extraction mocks turn each utterance into a seed;
 they are **not AI extraction**. Mock composition joins picked words and never speaks.
 
 ## Ownership and branches
 
-Person A and Person C are merged into `main`. This Leaves branch is based on
-`main` at dbaba29 and keeps the shared forest, API instance, and repository.
-The team merge order is A, C, then D. Person B starts ingestion/Slack from main;
-do not merge `feat/input-controls`. Shared account types/storage follow these merges.
+This Leaves branch merges main at b02fb34, including the account backend,
+account dashboard, online capture, and shared transcript clock. It keeps the shared
+forest, API instance, repository, and main's complete TranscriptPanel implementation.
+Person B owns ingestion/Slack; do not merge `feat/input-controls`.
 
 | Owner | Suggested branch | Files and responsibilities |
 | --- | --- | --- |
@@ -111,8 +113,8 @@ See `web/src/forest/README.md` for the forest API/input handoff and
 - Seeds retain `sourceId`, `sourceType`, and `timestampSec` for traceability. Updating
   a seed cannot change its identity, meeting partition, or source provenance.
 - Online meetings use a shared Zoom/Meet/Teams browser tab in the target flow.
-  The current app hides the legacy microphone capture while that integration is
-  pending. No hand/head tracking branch is mounted. Speech output receives only
+  The transcript panel captures the shared tab and the user's microphone separately.
+  No hand/head tracking branch is mounted. Speech output receives only
   a short-lived backend token; service keys remain server-side.
 - Whispering Leaves returns editable text for review. Speaking requires explicit
   confirmation and users must always be able to spell arbitrary words.

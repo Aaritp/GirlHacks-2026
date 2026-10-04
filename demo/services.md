@@ -1,60 +1,44 @@
-# Leaves and whiteboard service setup
+# Leaves service setup
 
-Revised scope: the active Leaves/forest flow uses Speech, OpenAI, and shared storage.
-Vision/Blob settings below apply only to retained, inactive whiteboard backup code.
-The active app does not mount OCR or hand/head tracking. Account types/storage,
-online shared-tab capture, and Slack/ingestion wait for their owners' integrations.
+The Leaves/forest flow uses Speech, OpenAI, and the shared repository. Accounts,
+the dashboard and online tab capture are integrated from main. Whiteboard OCR
+and its Blob/Vision dependencies are removed.
 
-Keep all keys and connection strings in ignored `api/local.settings.json` under
-`Values`, or in Function App settings. No key belongs in a `VITE_*` variable.
-Use Person A's `docs/storage.md` for the shared Cosmos adapter.
+Keep keys in ignored api/local.settings.json under Values, or Function App settings.
+Never place service keys in VITE_* variables. See docs/storage.md for Cosmos setup.
 
 | Setting | Used for |
 | --- | --- |
-| `GROVEKEEPER_STORAGE_MODE=cosmos` | Shared persistent repository; `memory` is explicitly local and temporary. |
-| `AZURE_COSMOS_ENDPOINT`, `AZURE_COSMOS_KEY`, optional `AZURE_COSMOS_DATABASE` | Person A's four meeting-partitioned containers. |
-| `AZURE_SPEECH_KEY`, `AZURE_SPEECH_REGION` | Person A's backend token exchange; browser receives a short-lived token only. |
-| `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_DEPLOYMENT` | Shared structured extraction plus Leaves suggestions. Choose a deployment supporting structured outputs. |
-| `AZURE_VISION_ENDPOINT`, `AZURE_VISION_KEY` | Vision Image Analysis Read (2024-02-01). |
-| `AZURE_STORAGE_CONNECTION_STRING` | Server-side private image upload. |
-| `AZURE_WHITEBOARD_CONTAINER` (optional, default `whiteboards`) | Existing private container or one the service can create. Public containers are rejected. |
+| GROVEKEEPER_STORAGE_MODE=cosmos | Shared persistence; memory is explicitly temporary local storage. |
+| AZURE_COSMOS_ENDPOINT, AZURE_COSMOS_KEY, optional AZURE_COSMOS_DATABASE | Shared Cosmos adapter. |
+| AZURE_SPEECH_KEY, AZURE_SPEECH_REGION | Backend exchange for a short-lived browser Speech token. |
+| AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_KEY, AZURE_OPENAI_DEPLOYMENT | Shared structured extraction and context-aware Leaves suggestions. |
 
-Browser: set `VITE_USE_MOCKS=false` for HTTP. The existing Vite proxy targets
-Functions on port 7071. Keep the existing deployment requirement for a trusted
-gateway/application authentication and per-meeting authorization; never put a
-Function key in the browser.
+Set VITE_USE_MOCKS=false for HTTP. Vite proxies /api to Functions on port 7071.
+Deployment still requires trusted application authentication and per-meeting
+authorization; do not put Function keys in the browser.
 
-Missing settings return explicit 503 errors. Azure failures return 502 (or the
-shared storage 503). HTTP never returns mock output. Manual spelling/composition
-does not need an AI model. Whiteboard requests validate image bytes before services:
-PNG/JPEG, at most 10 MiB, 50–16000 pixels per side, at most 40 million pixels.
-Raw base64 is required, without a data-URL prefix.
+Missing configuration returns explicit 503 errors. Azure failures return 502 or
+the shared storage 503. HTTP never silently returns fixtures. Manual spelling
+and deterministic composition do not need an AI model.
 
-Whiteboards use a SHA-256 image ID and a hashed meeting path in Blob. Source
-metadata stores a URL without SAS query parameters. Source is saved before OCR
-extraction; a failure can leave the uploaded source/image for a retry. There is
-no distributed transaction or orphan cleanup job. Retry with identical bytes to
-reuse the image and deduplicate seeds. OCR evidence never enters spoken utterances.
+Suggestions use the shared complete_json helper with minimal reasoning effort.
+They read the latest stored 120-second meeting window, bounded to 200 utterances
+and 16000 characters, plus optional supplemental text. Compose joins tokens
+verbatim, up to 20000 characters.
 
-Suggestions use Person A's shared reasoning-model helper (`complete_json`) with
-minimal effort; service settings and failure handling stay centralized.
+The app owns one meeting start and one user name. The transcript panel's Your name
+field enables Leaves and labels both mic and Leaves contributions. Azure Speech
+synthesis prepares a silent buffer. The controller rechecks the draft revision
+before playback; only the browser playing event records a stable-ID utterance.
+That event establishes playback initiation, not that the full sentence was heard.
+Retries save/extract without replaying. Pending saves are panel-local: resolve
+them before changing names or reloading.
 
-Speech is generated into a buffer with default SDK audio output disabled.
-The controller rechecks draft revision after async preparation. Only the browser's
-`playing` event creates an utterance; it establishes playback initiation, not
-proof that a person heard the complete sentence. An interrupted sentence remains
-an initiated contribution. Retry-save does not replay it. Pending saves do not
-survive panel unmount/reload; resolve them before changing participants.
+Desktop Chrome/Edge supports online tab capture. Share the meeting tab with audio;
+the microphone carries your own voice separately. Leaves audio plays locally:
+routing it to Zoom/Meet/Teams is a separate setup requirement. Stop capture before
+the Leaves demo to avoid recording its audio a second time.
 
-API wire shapes remain unchanged. Suggest reads the last 120 seconds relative
-to the latest stored utterance (bounded to 200 entries and 16000 characters),
-plus optional supplemental text. Compose joins user-selected tokens verbatim,
-up to 20000 characters. Extraction accepts an optional server-only whiteboard
-Source; ordinary meeting extraction behaves as before.
-
-Implementation references:
-[SpeechSynthesizer](https://learn.microsoft.com/javascript/api/microsoft-cognitiveservices-speech-sdk/speechsynthesizer),
-[Vision Read API](https://learn.microsoft.com/en-us/azure/ai-services/computer-vision/how-to/call-analyze-image-40).
-
-Real Azure verification requires configured resources; fake-backed tests do not
-establish live connectivity or Azure account permissions.
+Real Azure verification needs configured resources; fake-backed tests do not
+establish live cloud connectivity or permission.

@@ -18,10 +18,12 @@ ForestWorkspace and passes the same API instance to transcript and Leaves.
 - Users can type arbitrary spelling, edit the preview directly, or use the
   on-screen letter/Unicode keys. Suggestions use the shared backend AI helper and
   the selected meeting's persisted recent context.
-- WhiteboardPanel, OCR mocks, and backend OCR code remain inactive backup material;
-  they are not rendered by LeavesPanel.
+- The transcript panel's Your name field controls the speaker for both panels.
+  Leaves appears only with a nonblank name. Changing it remounts Leaves and clears
+  its draft and confirmation. Both panels use the app-owned meeting start time.
 
-Account-wide context waits for the shared account repository/types migration.
-Do not invent an account partition or storage layer here.
+The shared account backend/dashboard is integrated. Leaves suggestions remain
+scoped to the selected meeting's stored utterances, not account-wide retrieval.
+Whiteboard implementation, fixtures, dependencies, and demo assets have been removed.
 
 See `demo/integration.md`, `demo/services.md`, and the revised five-minute runbook.

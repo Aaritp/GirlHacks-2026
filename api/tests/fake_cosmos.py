@@ -51,9 +51,19 @@ class FakeContainer:
         self.items[(partition_key, item)] = document
         return copy.deepcopy(document)
 
-    def query_items(self, query, parameters, partition_key):
+    def query_items(self, query, parameters=None, partition_key=None, enable_cross_partition_query=False,
+                    max_item_count=None):
         self._check()
-        self.queries.append({"query": query, "parameters": parameters, "partition_key": partition_key})
+        self.queries.append({"query": query, "parameters": parameters, "partition_key": partition_key,
+                             "cross_partition": enable_cross_partition_query, "max_item_count": max_item_count})
+        if partition_key is None:
+            # Real Cosmos rejects an unscoped query unless cross-partition is explicitly enabled.
+            assert enable_cross_partition_query
+            if query == "SELECT * FROM c":
+                return iter([copy.deepcopy(doc) for doc in self.items.values()])
+            assert query == "SELECT * FROM c WHERE c.accountId = @accountId"
+            account_id = parameters[0]["value"]
+            return iter([copy.deepcopy(doc) for doc in self.items.values() if doc.get("accountId") == account_id])
         assert parameters == [{"name": "@meetingId", "value": partition_key}]
         return iter([copy.deepcopy(doc) for (pk, _), doc in self.items.items() if pk == partition_key])
 

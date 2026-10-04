@@ -1,17 +1,40 @@
 # Transcription — Person A
 
-- `speech.ts` — `startLiveTranscriber(api, callbacks)` streams the mic to Azure Speech
-  with diarized speaker labels (`Guest-1`, …). It only receives short-lived tokens from
-  `api.getSpeechToken()` and refreshes them before expiry. The SDK is loaded lazily.
-- `session.ts` — `createTranscriptSession({ api, meetingId })` saves each finalized
-  utterance (`api.saveUtterance`, retried with the same ID), then calls `api.extract`
-  once ~30 s of new saved transcript exists, on a 30 s wall-clock fallback, or on
-  `flush()`. Windows re-send 10 s of extracted context; the server deduplicates and the
-  session merges seeds by ID. Unsaved speech is never extracted; failures are surfaced
-  in `snapshot().error` and retried, never replaced with mock success.
-- `TranscriptPanel.tsx` — start/stop mic, live partials, saved transcript, extracted
-  seeds with owner/deadline/timestamp. "Play fixture transcript" feeds
-  `../api/fixtures.ts` through the same path for development without a microphone.
+Online meetings only. The user enters their name, clicks **Share meeting tab**, and picks
+the Chrome tab running Zoom, Meet or Teams (with "Also share tab audio" on). Requires
+desktop Chrome or Edge.
+
+Speaker names: the tab carries only the other participants (calls do not play your own
+voice back) and the mic carries the user, so they are transcribed separately. Mic lines are
+labelled with the user's name; tab lines get diarized labels (`Guest-1`, …) that the user
+can rename in the panel. A rename updates saved utterances (re-saved under the same ID)
+and the owners of seeds this session extracted. Guest labels restart every capture session,
+so renames never touch other sessions' seeds.
+
+- `capture.ts` — browser support check, user-facing error messages, and
+  `acquireMeetingStreams` (tab via `getDisplayMedia`, then echo-cancelled mic via
+  `getUserMedia`; anything granted is released on failure). `startPcmPipeline` taps tab
+  and mic separately with Web Audio and an AudioWorklet. Nothing plays through the
+  speakers, and the user keeps hearing the call (`suppressLocalAudioPlayback: false`).
+- `pcm.ts` — converts Float32 audio at the context rate to 16 kHz, 16-bit mono PCM.
+- `speech.ts` — `startPushTranscriber` feeds that PCM to Azure Speech through a push
+  stream: diarized for the tab, or a plain recognizer with a fixed `speaker` for the mic. Only short-lived tokens from
+  `api.getSpeechToken()` reach the browser.
+- `online.ts` — `startOnlineCapture` runs one transcriber per channel and ends the session once
+  when the user stops sharing, the mic disconnects, Speech cancels, or `stop()` is
+  called. Audio captured while the token loads is buffered, not dropped.
+- `session.ts` — saves each finalized utterance and calls `api.extract` after ~30 s of new
+  saved transcript, on a 30 s fallback, or on `flush()`. `renameSpeaker` applies names.
+- `TranscriptPanel.tsx` — share/stop, live partials, saved transcript, extracted
+  seeds. Any session end triggers the final extraction. "Play fixture transcript"
+  feeds `../api/fixtures.ts` through the same path for development without a call.
+
+`TranscriptPanel` props for app integration (all optional):
+- `accountId` links the meeting to a client account (sent with every extraction).
+- `meetingStartedAt` is an app-owned meeting clock (ms since epoch) so transcript lines and
+  Whispering Leaves sentences share one timeline.
+- `userName` + `onUserNameChange` make the name controlled, so the app can share one name
+  between the transcript (mic lines) and Leaves. Without them the panel remembers its own.
 
 Whispering Leaves can route a confirmed sentence through a session with
 `session.add({ speaker, text, startSec, via: 'leaves' })` to have it saved and extracted.

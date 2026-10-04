@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { ArrowDownUp, Check, CircleHelp, Flag, Leaf, List, Map, Plus, RefreshCw, Search, Sprout, Trees, X } from 'lucide-react';
+import { ArrowDownUp, Building2, Check, CircleHelp, Flag, Leaf, List, Map, Plus, RefreshCw, Search, Sprout, Trees, X } from 'lucide-react';
 import type { GroveApi } from '../api/contracts';
 import { inputBus } from '../input/inputBus';
 import type { Seed, SeedPatch } from '../types';
@@ -126,7 +126,7 @@ export function ForestWorkspace({ api, meetingId, meetingTitle, demo = false, re
           <span className={`stage-dot ${stage}`} /><span>{stage === 'all' ? 'All seeds' : growthLabels[stage]}</span><span className="stage-count">{counts(stage)}</span>
         </button>)}
       </div>
-      <div className="sidebar-bottom"><div className="care-note"><Sprout size={28} strokeWidth={1.25} /><p>Small steps.<br />Lasting growth.</p></div>
+      <div className="sidebar-bottom"><a className="nav-item" href="?accounts"><Building2 size={18} />Client accounts</a><div className="care-note"><Sprout size={28} strokeWidth={1.25} /><p>Small steps.<br />Lasting growth.</p></div>
         <button className="nav-item" onClick={() => setHelp(!help)} aria-expanded={help}><CircleHelp size={18} />How your grove works</button>
         <span className="workspace-mode"><span />{demo ? 'Demo workspace' : 'Connected workspace'}</span>
       </div>

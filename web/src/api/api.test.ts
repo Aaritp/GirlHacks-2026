@@ -83,3 +83,26 @@ describe('HTTP API', () => {
     await expect(api.getGrove('missing')).rejects.toMatchObject({ status: 503, code: 'HTTP_ERROR' });
   });
 });
+
+describe('meeting transcript endpoint and account extraction', () => {
+  it('mock returns a meeting transcript in order, isolated by meeting', async () => {
+    const api = createMockApi({ seeds: [], roots: [] });
+    await api.saveUtterance({ ...demoUtterances[1] });
+    await api.saveUtterance({ ...demoUtterances[0] });
+    await api.saveUtterance({ ...demoUtterances[0], id: 'other', meetingId: 'other-meeting' });
+    expect((await api.getUtterances(DEMO_MEETING_ID)).utterances.map((u) => u.id)).toEqual(['utterance-1', 'utterance-2']);
+    expect(await api.getUtterances('nobody')).toEqual({ utterances: [] });
+  });
+
+  it('mock extraction carries the account and quote', async () => {
+    const api = createMockApi({ seeds: [], roots: [] });
+    const { seeds } = await api.extract({ meetingId: DEMO_MEETING_ID, utterances: demoUtterances, accountId: 'acct-1' });
+    expect(seeds.every((seed) => seed.accountId === 'acct-1' && seed.quote)).toBe(true);
+  });
+
+  it('HTTP client requests a meeting transcript with an encoded ID', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(Response.json({ utterances: [] }));
+    await createHttpApi('/api', fetcher).getUtterances('meeting & two');
+    expect(fetcher.mock.calls[0][0]).toBe('/api/meetings/meeting%20%26%20two/utterances');
+  });
+});

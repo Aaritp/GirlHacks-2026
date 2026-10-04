@@ -11,7 +11,11 @@ new objects and retain IDs when retrying.
 | GET | `/health` | — | `{ status, service, stage }` |
 | POST | `/speech-token` | — | `{ token, region }` |
 | POST | `/utterances` | `Utterance` | Saved `Utterance` |
-| POST | `/extract` | `{ meetingId, utterances: Utterance[] }` | `{ seeds: Seed[], roots: Root[] }` |
+| POST | `/extract` | `{ meetingId, utterances: Utterance[], accountId? }` | `{ seeds: Seed[], roots: Root[] }` |
+| GET | `/meetings/{meetingId}/utterances` | — | `{ utterances: Utterance[] }` ordered by `startSec` |
+| GET | `/accounts` | — | `Account[]` sorted by name |
+| POST | `/accounts` | `Account` | Saved `Account` (201); 409 if the id exists |
+| GET | `/accounts/{id}/timeline` | — | `{ accountId, items: [{ source: Source, seeds: Seed[] }] }` newest first |
 | POST | `/seeds` | `Seed` | Saved `Seed` (201) |
 | PATCH | `/seeds/{id}?meetingId=...` | `SeedPatch` | Updated `Seed` |
 | GET | `/meetings/{meetingId}/grove` | — | `{ seeds, roots }` |
@@ -21,12 +25,11 @@ new objects and retain IDs when retrying.
 
 ## Decisions clarified for integration
 
-- Product pivot: client accounts will group online meetings, Slack, and pasted or
-  uploaded email/chat/docs after the shared account contract lands. This branch
-  deliberately retains `meetingId` and the existing repository interface. It does
-  not invent account fields or read context across meeting partitions.
-- Leaves now uses native mouse/keyboard controls. OCR routes remain backup code;
-  the active app does not offer whiteboard upload or hand/head tracking.
+- The shared account backend and dashboard are integrated. Leaves uses the existing
+  meeting repository and scopes suggestions to the selected meeting.
+- Leaves uses native mouse/keyboard controls and shares the transcript panel's
+  Your name field and app-owned meeting clock. Whiteboard OCR has been dropped;
+  the existing foundation route remains an unimplemented legacy placeholder.
 
 - PATCH includes `meetingId` as a query parameter because all four planned Cosmos
   containers use `/meetingId` as their partition key. The architecture left its
@@ -45,14 +48,34 @@ new objects and retain IDs when retrying.
   stay null; do not invent them. Typical cadence is 30 seconds of new transcript.
 - For a meeting transcript, `sourceId` identifies its meeting Source (fixtures use
   the meeting ID). `timestampSec` provides the link back to the spoken context.
-- Whiteboard uploads supply raw base64 PNG/JPEG data (at most 10 MiB decoded,
-  50–16000 pixels per side, at most 40 million pixels). The server uploads to private
-  Blob storage and creates the Source before extracting and saving whiteboard seeds.
-  Identical bytes reuse the Source within a meeting; OCR evidence is never an utterance.
 - Suggest targets 6–8 words and 3 phrases from roughly two minutes of context.
   Compose accepts user-spelled words too; it returns a preview and never triggers TTS.
 - Features always call the `GroveApi` interface. Browser mocks retain changes for that
   instance only; reset by reloading. HTTP never silently falls back to mock success.
+
+## Accounts and text sources
+
+- Seed kinds: `commitment`, `decision`, `risk`, `customer_need`. Source types: `meeting`,
+  `whiteboard`, `email`, `chat`, `document`, `slack`. Seeds may also be `leaves`.
+- `Seed.accountId` and `Seed.quote`, and `Source.accountId` and `Source.text`, are optional and
+  null when absent, so data stored before accounts still loads. `quote` is the exact source
+  wording: for meetings, the cited utterances; for text sources, a span verified verbatim in
+  `Source.text`. Items whose quote is not in the source are dropped, never saved.
+- Non-meeting sources use their own id as `meetingId`, so `PATCH /seeds/{id}?meetingId=` works
+  unchanged for every seed. Their seeds have `timestampSec: null`.
+- `/extract` with `accountId` links the meeting's Source to that account on first use; later
+  windows inherit it. A different `accountId` for an already-linked meeting → 409 `CONFLICT`.
+- Text sources (email, chat, document, Slack) are ingested by `api/ingest`, which saves the
+  Source and calls `extract_and_save(..., source=source)` with utterance-shaped chunks of its
+  text. Those chunks are evidence only: they are not saved as utterances, and the seeds point at
+  the source (`sourceType` = source type, `sourceId` = source id, `timestampSec: null`).
+- `GET /meetings/{id}/utterances` returns an empty list for an unknown meeting (not 404).
+- `GET /accounts/{id}/timeline` returns every Source of the account, newest `createdAt` first,
+  each with the seeds extracted from it (`seeds` is empty when there are none). Unknown
+  account → 404 `NOT_FOUND`; an account with no sources → 200 with empty `items`. Records of
+  another account, and bookkeeping records stored as sources (`recordType` other than
+  `source`), are never included. Meeting sources have null `text`; read their transcript
+  with `GET /meetings/{id}/utterances`.
 
 ## Errors
 
@@ -61,7 +84,7 @@ new objects and retain IDs when retrying.
 ```
 
 400 `INVALID_REQUEST`, 404 `NOT_FOUND`, 409 `CONFLICT`, 501 `NOT_IMPLEMENTED`,
-502 `UPSTREAM_ERROR` (Azure Speech/OpenAI/Vision/Blob failed), 503 `STORAGE_NOT_CONFIGURED`,
+502 `UPSTREAM_ERROR` (Azure Speech/OpenAI failed), 503 `STORAGE_NOT_CONFIGURED`,
 503 `STORAGE_UNAVAILABLE` (configured storage failed), 503 `SERVICE_NOT_CONFIGURED`
 (Azure service settings missing; the message names the setting, never its value).
 The typed HTTP client throws `ApiError` with `status`, `code`, and `message`.
@@ -74,8 +97,9 @@ Storage: Cosmos DB or explicit memory mode for seeds, roots, utterances and sour
 persisted roots.
 
 `/speech-token` exchanges the server-held Speech key for a 10-minute token
-(`Cache-Control: no-store`). The browser streams mic audio straight to Azure Speech
-with speaker diarization (`ConversationTranscriber`) and refreshes the token every 9 minutes.
+(`Cache-Control: no-store`). The browser captures the shared meeting tab and mic
+separately, streaming PCM to Azure Speech. Tab speech is diarized; mic speech uses
+the shared Your name value. Only short-lived tokens reach the browser.
 
 `/extract` saves the meeting Source and the request's utterances, asks Azure OpenAI
 (structured outputs) for commitments and decisions, then validates the result:
@@ -97,14 +121,9 @@ speech or persistence side effect. The Leaves client requires explicit confirmat
 invalidates it on edits, and saves one stable-ID utterance with `via: "leaves"` when
 audio playback starts. Failed saves/extraction may be retried without replaying audio.
 
-Whiteboard extraction reuses the shared pipeline with a server-only Source argument:
-private image in Blob, metadata in the shared sources container, extracted seeds
-with `sourceType: "whiteboard"`, the image Source ID, and null `timestampSec`.
-The existing HTTP wire shapes are unchanged.
-
-Browser mocks still provide deterministic per-utterance extraction (not AI) and reject
-Speech with 501. The inactive whiteboard fixture wrapper is retained for legacy tests
-but is not mounted in the demo app. Real HTTP never falls back to fixtures.
+Browser mocks provide deterministic per-utterance extraction (not AI) and reject
+Speech with 501. Real HTTP never falls back to fixtures. The whiteboard route is a
+legacy 501 placeholder; no OCR implementation or whiteboard demo is included.
 
 Azure OpenAI: use `api/shared/openai_client.py` (`complete_json` / `complete_text`) for any
 model call. It targets reasoning deployments such as gpt-5-mini: it sends `reasoning_effort`

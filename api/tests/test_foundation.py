@@ -119,4 +119,5 @@ def test_speech_missing_configuration_and_preview_only_composition(handlers, mon
 def test_all_contract_routes_are_registered():
     routes = {function.get_trigger().get_dict_repr()["route"] for function in FUNCTIONS}
     assert routes == {"health", "speech-token", "utterances", "extract", "seeds", "seeds/{id}",
-                      "meetings/{meetingId}/grove", "whiteboard", "leaves/suggest", "leaves/compose"}
+                      "meetings/{meetingId}/grove", "meetings/{meetingId}/utterances", "accounts", "accounts/{id}/timeline",
+                      "whiteboard", "leaves/suggest", "leaves/compose"}

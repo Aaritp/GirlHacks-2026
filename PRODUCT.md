@@ -23,19 +23,19 @@ React/Vite/TypeScript browser app with Azure Functions and shared storage owned 
 Person A. Person C owns forest UI and seed health; Person D owns
 Whispering Leaves. Person A's shared backend supports Cosmos and explicit local memory.
 Person B now owns ingestion and Slack. The input-tracking branch is not part of the
-new product. Shared account types/storage are scheduled after the feature merges;
-this checkout still uses the existing meeting partitions.
+new product. Shared account types/storage and the account dashboard are integrated;
+meeting partitions remain the storage key.
 
 ## Capabilities and Constraints
 
 Leaves uses native mouse/keyboard controls. Hand/head tracking and in-person
-capture are cut. Online capture is planned through a shared Zoom/Meet/Teams tab;
-the legacy microphone UI is disabled until that integration lands. Slack is the
+capture are cut. Online capture uses a shared Zoom/Meet/Teams tab and captures the
+user's microphone separately. Transcript and Leaves share one name and meeting clock. Slack is the
 only live content connector; email/chat/docs arrive by paste or upload.
 Source provenance is immutable. Speech requires explicit confirmation.
-Seven-day inactivity decay is the base health rule. Deadline acceleration remains
-undecided. For this implementation, bloom is treated as completed and immune to decay;
-this is an implementation assumption to confirm with the team.
+The meeting grove uses its existing inactivity health rule. The account dashboard
+shows completed seeds as blooming, overdue commitments and open risks as wilting,
+and other open seeds as growing.
 
 ## Brand Commitments
 

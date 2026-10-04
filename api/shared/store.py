@@ -11,7 +11,7 @@ from threading import RLock
 from typing import Protocol
 
 from shared.http import error_response
-from shared.models import Grove, Root, Seed, SeedPatch, Source, Utterance
+from shared.models import Account, Grove, Root, Seed, SeedPatch, Source, Utterance
 
 
 class StorageNotConfigured(Exception):
@@ -38,6 +38,13 @@ class GroveStore(Protocol):
     def create_source(self, source: Source) -> Source | None: ...
     def get_source(self, meeting_id: str, source_id: str) -> Source | None: ...
     def get_grove(self, meeting_id: str) -> Grove: ...
+    # Accounts span meetings. Account reads are cross-partition queries filtered by accountId.
+    def create_account(self, account: Account) -> Account | None: ...
+    def get_account(self, account_id: str) -> Account | None: ...
+    # Sorted by name.
+    def list_accounts(self) -> list[Account]: ...
+    def list_account_sources(self, account_id: str) -> list[Source]: ...
+    def list_account_seeds(self, account_id: str) -> list[Seed]: ...
 
 
 class MemoryStore:
@@ -48,11 +55,12 @@ class MemoryStore:
         self.roots: dict[tuple[str, str], Root] = {}
         self.utterances: dict[tuple[str, str], Utterance] = {}
         self.sources: dict[tuple[str, str], Source] = {}
+        self.accounts: dict[str, Account] = {}
         self.lock = RLock()
 
     def clear(self):
         with self.lock:
-            for table in (self.seeds, self.roots, self.utterances, self.sources):
+            for table in (self.seeds, self.roots, self.utterances, self.sources, self.accounts):
                 table.clear()
 
     def _create(self, table: dict, item):
@@ -115,6 +123,30 @@ class MemoryStore:
     def get_grove(self, meeting_id: str):
         with self.lock:
             return Grove(seeds=self.list_seeds(meeting_id), roots=self.list_roots(meeting_id))
+
+    def create_account(self, account: Account):
+        with self.lock:
+            if account.id in self.accounts:
+                return None
+            self.accounts[account.id] = account.model_copy(deep=True)
+            return account.model_copy(deep=True)
+
+    def get_account(self, account_id: str):
+        with self.lock:
+            account = self.accounts.get(account_id)
+            return account.model_copy(deep=True) if account else None
+
+    def list_accounts(self):
+        with self.lock:
+            return sorted((a.model_copy(deep=True) for a in self.accounts.values()), key=lambda a: (a.name.lower(), a.id))
+
+    def list_account_sources(self, account_id: str):
+        with self.lock:
+            return [s.model_copy(deep=True) for s in self.sources.values() if s.accountId == account_id]
+
+    def list_account_seeds(self, account_id: str):
+        with self.lock:
+            return [s.model_copy(deep=True) for s in self.seeds.values() if s.accountId == account_id]
 
 
 store = MemoryStore()
