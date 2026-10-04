@@ -7,11 +7,12 @@ import { speakerLabel } from './speech';
 
 const MEETING = 'meeting-a';
 
-function setup(overrides: Partial<Pick<GroveApi, 'saveUtterance' | 'extract'>> = {}) {
+function setup(overrides: Partial<Pick<GroveApi, 'saveUtterance' | 'extract' | 'updateSeed'>> = {}) {
   const backing = createMockApi({ seeds: [], roots: [] });
   const api = {
     saveUtterance: vi.fn(overrides.saveUtterance ?? backing.saveUtterance),
     extract: vi.fn(overrides.extract ?? backing.extract),
+    updateSeed: vi.fn(overrides.updateSeed ?? backing.updateSeed),
   };
   let counter = 0;
   let latest: TranscriptSnapshot | null = null;
@@ -102,8 +103,10 @@ describe('transcript session', () => {
     await session.flush();
     expect(latest().seeds).toEqual([]);
     expect(latest().error).toMatch(/Extraction failed: Azure OpenAI/);
+    expect(latest().pending).toBe(1);
     fail = false;
     await session.flush();
+    expect(latest().pending).toBe(0);
     expect(windowIds(api.extract.mock.calls[1])).toEqual(['u1']);
     expect(latest().seeds).toHaveLength(1);
     expect(latest().error).toBeNull();
@@ -132,5 +135,104 @@ describe('transcript session', () => {
     expect(speakerLabel('Unknown')).toBe('Unknown speaker');
     expect(speakerLabel('')).toBe('Unknown speaker');
     expect(speakerLabel('Guest-2')).toBe('Guest-2');
+  });
+
+  it('renames a speaker everywhere: transcript, saved utterances, owners, and future lines', async () => {
+    const { api, session, latest, backing } = setup();
+    await session.add(say(0, "I'll send the deck.", 'Guest-1'));
+    await session.add(say(5, 'Sounds good.', 'Guest-2'));
+    await session.flush();
+    // The mock extractor makes the speaker the owner, like a first-person promise.
+    expect(latest().seeds.map((seed) => seed.owner)).toEqual(['Guest-1', 'Guest-2']);
+    api.saveUtterance.mockClear();
+
+    await session.renameSpeaker('Guest-1', 'Sam');
+    expect(latest().entries.map((entry) => entry.utterance.speaker)).toEqual(['Sam', 'Guest-2']);
+    // Re-saved with the same ID: the server upserts instead of duplicating.
+    expect(api.saveUtterance.mock.calls.map(([u]) => [u.id, u.speaker])).toEqual([['u1', 'Sam']]);
+    expect(latest().seeds.map((seed) => seed.owner)).toEqual(['Sam', 'Guest-2']);
+    expect((await backing.getGrove(MEETING)).seeds.find((seed) => seed.owner === 'Sam')).toBeDefined();
+    expect(latest().speakers).toEqual(['Sam', 'Guest-2']);
+
+    await session.add(say(9, 'One more thing.', 'Guest-1'));
+    expect(latest().entries[2].utterance.speaker).toBe('Sam');
+  });
+
+  it('patches owners on extraction results that were in flight during a rename', async () => {
+    const backing = createMockApi({ seeds: [], roots: [] });
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => { release = resolve; });
+    const { api, session, latest } = setup({
+      extract: async (request) => { await gate; return backing.extract(request); },
+      updateSeed: backing.updateSeed,
+    });
+    await session.add(say(0, "I'll book the room.", 'Guest-3'));
+    const extraction = session.flush();
+    await session.renameSpeaker('Guest-3', 'Priya');
+    release();
+    await extraction;
+    expect(api.updateSeed).toHaveBeenCalledWith(MEETING, expect.any(String), { owner: 'Priya' });
+    expect(latest().seeds[0].owner).toBe('Priya');
+    expect(latest().error).toBeNull();
+  });
+
+  it('merges when renamed to an existing name and follows chained renames', async () => {
+    const { session, latest } = setup();
+    await session.add(say(0, 'First.', 'Guest-1'));
+    await session.add(say(2, 'Second.', 'Guest-2'));
+    await session.renameSpeaker('Guest-1', 'Sam');
+    await session.renameSpeaker('Guest-2', 'Sam');
+    expect(latest().speakers).toEqual(['Sam']);
+    await session.renameSpeaker('Sam', 'Samantha');
+    await session.add(say(4, 'Third.', 'Guest-1'));
+    expect(latest().entries.map((entry) => entry.utterance.speaker)).toEqual(['Samantha', 'Samantha', 'Samantha']);
+  });
+
+  it('rejects renaming Unknown speaker or to a blank name, and reports owner patch failures', async () => {
+    const { session, latest } = setup({
+      updateSeed: async () => { throw new ApiError(503, 'STORAGE_UNAVAILABLE', 'Storage is temporarily unavailable.'); },
+    });
+    await expect(session.renameSpeaker('Unknown speaker', 'Sam')).rejects.toThrow(/cannot be renamed/);
+    await expect(session.renameSpeaker('Guest-1', '   ')).rejects.toThrow(/1-100 characters/);
+    await session.add(say(0, "I'll call them.", 'Guest-1'));
+    await session.flush();
+    await session.renameSpeaker('Guest-1', 'Sam');
+    expect(latest().error).toMatch(/Could not rename the owner of .*Storage is temporarily unavailable/);
+    expect(latest().entries[0].utterance.speaker).toBe('Sam');
+  });
+
+  it('sends the account with every extraction when the meeting is linked to one', async () => {
+    const backing = createMockApi({ seeds: [], roots: [] });
+    const extract = vi.fn(backing.extract);
+    const linked = createTranscriptSession({
+      api: { ...backing, extract }, meetingId: MEETING, accountId: 'acct-northwind', newId: () => 'a1',
+    });
+    await linked.add(say(0, "I'll send the plan."));
+    await linked.flush();
+    expect(extract.mock.calls[0][0]).toMatchObject({ meetingId: MEETING, accountId: 'acct-northwind' });
+    expect(linked.snapshot().seeds[0].accountId).toBe('acct-northwind');
+
+    const { api, session } = setup();
+    await session.add(say(0, 'Hello.'));
+    await session.flush();
+    expect(api.extract.mock.calls[0][0]).not.toHaveProperty('accountId');
+  });
+
+  it('restores a saved transcript in order without re-extracting or duplicating it', async () => {
+    const { api, session, latest } = setup();
+    const saved = [
+      { id: 'old-2', meetingId: MEETING, speaker: 'Sam', text: 'Second.', startSec: 20, via: 'voice' as const },
+      { id: 'old-1', meetingId: MEETING, speaker: 'Prisha', text: 'First.', startSec: 5, via: 'voice' as const },
+      { id: 'elsewhere', meetingId: 'other', speaker: 'X', text: 'Not ours.', startSec: 1, via: 'voice' as const },
+    ];
+    expect(session.restore(saved)).toBe(2);
+    expect(session.restore(saved)).toBe(0);
+    expect(latest().entries.map((entry) => [entry.utterance.id, entry.state])).toEqual([['old-1', 'saved'], ['old-2', 'saved']]);
+    expect(latest().pending).toBe(0);
+    await session.add(say(30, 'New line.'));
+    await session.flush();
+    // old-2 is within 10 s of the new line, so it is re-sent only as overlap context; old-1 is not.
+    expect(windowIds(api.extract.mock.calls[0])).toEqual(['old-2', 'u1']);
+    expect(api.saveUtterance.mock.calls.map(([u]) => u.id)).toEqual(['u1']);
   });
 });
