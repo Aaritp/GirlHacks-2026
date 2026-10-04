@@ -22,7 +22,7 @@ export interface AccountSeed extends Omit<Seed, 'kind' | 'sourceType'> {
   accountId: string;
   kind: SeedKind;
   sourceType: SourceType | 'leaves';
-  /** The words in the source this seed was extracted from. Null when none was recorded. */
+  /** The exact source words this seed cites. Null for manually planted seeds. */
   quote: string | null;
 }
 
@@ -33,7 +33,7 @@ export interface AccountSource {
   type: SourceType;
   title: string;
   createdAt: string;
-  /** Full text of the conversation or document. Null when the body is not stored. */
+  /** Body of an email, chat, Slack thread or document. Null for meetings, whose transcript is stored as utterances. */
   text: string | null;
 }
 

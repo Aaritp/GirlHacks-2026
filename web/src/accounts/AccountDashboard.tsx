@@ -165,12 +165,14 @@ function SourceDetail({ source, seeds, date, onClose, onSeed }: {
   return <aside className="account-detail" id="source-detail" tabIndex={-1} aria-label="Source details">
     <div className="panel-heading"><h3>{source.title}</h3><button className="icon-button" onClick={onClose} aria-label="Close source details"><X size={18} /></button></div>
     <p className="detail-source"><SourceIcon type={source.type} size={16} />{sourceLabels[source.type]} · {formatDay(source.createdAt)}</p>
-    {source.text ? <p className="source-text">{source.text}</p> : <p className="detail-muted">The text of this source is not available.</p>}
+    {source.text ? <p className="source-text">{source.text}</p>
+      : <p className="detail-muted">{source.type === 'meeting' ? 'The transcript of this meeting is not shown here yet. Each seed below quotes the words it came from.' : 'The text of this source is not available.'}</p>}
     <h5>Seeds from this source</h5>
     {seeds.length === 0 ? <p className="detail-muted">Nothing was extracted from this source.</p>
       : <ul className="source-seeds">{seeds.map((seed) => {
         const state = displayState(seed, date);
         return <li key={seed.id}><button className="row-link" onClick={() => onSeed(seed.id)}>{seed.text}</button>
+          {seed.quote && <blockquote>{seed.quote}</blockquote>}
           <span className="detail-muted">{kindLabels[seed.kind]} · <span className={`state-tag ${state}`}>{stateLabels[state]}</span></span></li>;
       })}</ul>}
   </aside>;

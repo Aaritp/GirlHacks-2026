@@ -49,24 +49,34 @@ The meeting grove still uses the old rule (`../forest/health.ts`).
 
 - `items` holds every source of the account, newest `createdAt` first, including sources
   with no seeds. Unknown account → 404 `NOT_FOUND`. Storage failure → 503.
-- Not yet recorded in `docs/api.md`; it goes there once you agree to the shape.
+- Not yet recorded in `docs/api.md`; it goes there once the team agrees to the shape.
 
-Open questions, each of which changes this UI:
+Prisha's answers (proposals until the team agrees, since they change shared types):
 
-1. **Quote**: is there a per-seed field holding the words it was extracted from? I assumed
-   `quote: string | null`. Without it the panel says no quote was recorded.
-2. **Source text**: does `Source` carry the body? I assumed `text: string | null`.
-3. **Contacts**: what is the shape of `Account.contacts[]`? I assumed `{ name, role?, email? }`
-   and do not display contacts yet.
-4. **Seed PATCH**: marking done uses the existing `PATCH /seeds/{id}?meetingId=`. Does a
-   seed from an email or Slack thread have a `meetingId`, or does the key become `accountId`?
-5. **Flagged risk**: I treat every open seed of kind `risk` as flagged. Is there a separate flag?
-6. **Counts**: the list fetches one timeline per account to count. Fine for three demo
-   accounts; a counts field on `GET /api/accounts` would be better beyond that.
+| Question | Answer | Effect here |
+| --- | --- | --- |
+| Quote | `quote: string \| null` on `Seed`; extraction fills it, manual seeds get null. | Matches. |
+| Source text | `text: string \| null` on `Source`; stored for email, Slack and documents, null for meetings. | Sample meetings now have null text. See the gap below. |
+| Contacts | `{ name, role?, email? }`. | Matches. Not displayed yet. |
+| PATCH key | `meetingId` stays the storage key; email and Slack sources use their thread or source ID as `meetingId`. | Matches. Mark done works unchanged. |
+| Risk flag | An open seed of kind `risk` is flagged; resolving it is `bloom`. | Matches. |
+| Counts | One timeline per account is fine for three demo accounts. | Matches. |
 
-The server side is drafted in `api/accounts_timeline` behind a three-method read interface
-and is not registered. It needs `get_account`, `list_account_sources` and
-`list_account_seeds` on the shared store.
+She will add `get_account`, `list_account_sources` and `list_account_seeds` to the shared
+store once the account types are agreed. The endpoint in `api/accounts_timeline` is written
+against those three reads and stays unregistered until then.
+
+Still open:
+
+- **Meeting transcripts.** A meeting source has null text because its words are stored as
+  utterances, and there is no route that returns a meeting's utterances. Selecting a meeting
+  in the timeline therefore shows its seeds and their quotes, and says the transcript is not
+  shown. To show it, either the timeline includes the transcript for meeting sources or a
+  `GET /meetings/{id}/utterances` route is added.
+- **Ingestion.** Until email, chat, document and Slack ingestion exists, a real account's
+  timeline only contains meetings.
+- **New kinds.** Extraction does not produce `risk` or `customer_need` yet, so real data
+  will show no wilting risks.
 
 ## For Person D: Ask the Grove
 

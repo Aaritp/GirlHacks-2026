@@ -70,10 +70,18 @@ describe('account dashboard', () => {
     setup('/?account=acct-northwind');
     fireEvent.click(await screen.findByRole('button', { name: /Re: sandbox credentials/ }));
     const detail = within(screen.getByRole('complementary', { name: 'Source details' }));
-    expect(detail.getByText(/our testers are blocked/)).toBeTruthy();
+    expect(document.querySelector('.source-text')!.textContent).toContain('our testers are blocked. If this slips past Friday');
     expect(detail.getByRole('button', { name: 'Send sandbox credentials to Northwind testers' })).toBeTruthy();
     expect(detail.getByRole('button', { name: 'Pilot window missed if credentials slip past Friday' })).toBeTruthy();
     expect(detail.queryByText('Confirm the tax table mapping covers Quebec')).toBeNull();
+  });
+
+  it('says a meeting transcript is not shown and quotes each seed instead', async () => {
+    setup('/?account=acct-northwind');
+    fireEvent.click(await screen.findByRole('button', { name: /Payroll migration kickoff/ }));
+    const detail = within(screen.getByRole('complementary', { name: 'Source details' }));
+    expect(detail.getByText(/transcript of this meeting is not shown here yet/)).toBeTruthy();
+    expect(detail.getByText('I will send the integration checklist this week.').tagName).toBe('BLOCKQUOTE');
   });
 
   it('traces a seed to its source and quote', async () => {
