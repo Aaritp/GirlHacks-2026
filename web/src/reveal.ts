@@ -9,7 +9,7 @@ const GROUPS: Record<string, string> = {
   grow: '.garden-seed, .forest-plant',
   slide: '.timeline > li, .account-list > li, .seed-row, .account-table tbody tr, .ask-context-card',
   rise: '.page-heading, .meeting-summary, .section-heading, .plot-heading, .account-toolbar, .grove-toolbar, .ask-box, '
-    + '.ask-context, .leaves, .workspace-extension > section, .ingest-panel section, .ingest-panel article, '
+    + '.ask-context, .workspace-extension > section, .ingest-panel section, .ingest-panel article, '
     + '.workspace-footer',
   rule: '.account-section',
 };

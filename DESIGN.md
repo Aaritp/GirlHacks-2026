@@ -6,14 +6,14 @@ colors:
   metal-deep: "#10271f"
   metal-reflection: "#6b877a"
   citron: "#d5e999"
-  page: "#d9cbae"
-  paper-raised: "#e6dac0"
-  paper-sunk: "#cabb9b"
-  rule: "#9f9070"
-  rule-soft: "#bfb08c"
+  page: "#dcecd6"
+  paper-raised: "#eef6e7"
+  paper-sunk: "#c2ddc4"
+  rule: "#86a88c"
+  rule-soft: "#b2cdb4"
   ink: "#203a30"
   muted: "#445246"
-  line: "#bfb08c"
+  line: "#b2cdb4"
   planted: "#719b45"
   growing: "#4a8058"
   blossom: "#d79cdd"
@@ -115,11 +115,17 @@ four plant states. Text labels repeat the meaning of every color.
 
 ### Neutral
 
-The page is a warm mid beige paper (`page`). Fields and raised surfaces use a
-lighter paper, wells and hover states a slightly darker one, and hairlines a warm rule.
-There is no white surface. Ink and secondary text stay green and are dark enough to read
-on the paper (at least 4.5:1). `web/src/theme.css` holds these tokens and re-grounds every
-feature's panels, including Ask the Grove, ingestion and Whispering Leaves.
+The ground is an enchanted forest seen through mist, drawn in CSS and inline SVG in
+`web/src/theme.css`: warm sunlight high on the left, a pale green sky, and three tree
+lines receding into mist along the bottom of the viewport, with a few drifting firefly
+lights. It is fixed behind the content and kept pale, so ink and secondary text stay at
+least 4.5:1 anywhere on the page. Panels and fields are a near-white leaf green, slightly
+translucent so the forest reads through them; hairlines are a soft green rule. There is no
+pure white surface and no photograph.
+
+The pointer is a pixel-art wand with a star tip (the hotspot). It gains extra sparkles
+over anything that can be pressed. Text fields keep the text caret, disabled controls
+keep the not-allowed cursor, and arranging plants keeps grab and grabbing.
 
 **The State Has Words Rule.** Every growth color also has a text label and a distinct plant silhouette.
 
