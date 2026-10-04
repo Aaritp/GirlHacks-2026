@@ -4,9 +4,11 @@ A meeting productivity app that turns commitments and decisions into seeds in a
 living forest, with mouse, hand and head controls. Whispering Leaves will let people
 compose and confirm speech using the meeting's context.
 
-This repository currently contains the **shared foundation**, not the finished app.
-It gives all four owners a working frontend, shared contracts, fixtures, a typed API
-client, one input bus, and a Python Azure Functions scaffold.
+This repository contains the **shared foundation and Person C's forest workspace**.
+The forest includes garden/list views, editable seeds, progress actions, dependency
+roots, shared-input handling, and seed-health logic. Other owners' real integrations
+are still in progress. Shared contracts, fixtures, a typed API client, one input bus,
+and a Python Azure Functions scaffold support parallel work.
 
 ## Run the frontend
 
@@ -18,7 +20,7 @@ npm run dev
 ```
 
 Open the local URL printed by Vite. Development uses browser mocks by default and
-shows sample commitments. No Azure account is needed. To configure explicitly, copy
+shows a sample garden. Changes in demo mode reset on reload. No Azure account is needed. To configure explicitly, copy
 `web/.env.example` to `web/.env`. Changes to environment settings require a restart.
 
 ```sh
@@ -55,7 +57,8 @@ func start
 ```
 
 The API runs on port 7071. Set `VITE_USE_MOCKS=false` in `web/.env` and restart Vite;
-its `/api` proxy forwards requests to the local backend. Test `GET /api/health`.
+its `/api` proxy forwards requests to the local backend. Use `/?meetingId=YOUR_MEETING_ID`
+to open a specific grove. Test `GET /api/health`.
 The local backend starts with an empty grove; `POST /api/seeds` populates it.
 
 `GROVEKEEPER_STORAGE_MODE=memory` explicitly enables development-only storage.
@@ -69,8 +72,8 @@ they are **not AI extraction**. Mock composition joins picked words and never sp
 
 ## Ownership and branches
 
-Current foundation branch: `feat/shared-foundation`. Once the foundation is committed
-and shared by the team, branch feature work from the same foundation revision.
+The foundation is shared on `feat/shared-foundation`. Person C's current work is on
+`feat/forest-ui`. Branch feature work from the same foundation revision.
 
 | Owner | Suggested branch | Files and responsibilities |
 | --- | --- | --- |
@@ -83,7 +86,8 @@ and shared by the team, branch feature work from the same foundation revision.
 Each feature folder has a README describing its integration points. Shared changes
 to `web/src/types.ts`, the API contracts, root app composition, or backend registration
 must be coordinated. Do not have multiple people independently rewrite those files.
-Do not create the other feature branches until there is a shared foundation commit.
+See `web/src/forest/README.md` for the forest API/input handoff and
+`api/health_timer/README.md` for the storage adapter needed by the hourly timer.
 
 ## Contracts and project rules
 
@@ -117,7 +121,8 @@ the architecture's 3-minute flow can be the core of it. See [demo/README.md](dem
 ## Remaining team decisions
 
 - Assign the shared-backend owner and Azure resource setup.
-- Choose PixiJS or D3, and confirm Azure model/region availability.
+- The forest currently uses D3 scale/path utilities with accessible HTML controls;
+  confirm Azure model/region availability for the other integrations.
 - Confirm team size/event duration and complete the actual integrations.
 - Define deadline acceleration and how completed seeds affect health before the timer.
 
