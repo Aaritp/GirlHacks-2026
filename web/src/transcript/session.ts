@@ -1,7 +1,7 @@
 import type { GroveApi } from '../api/contracts';
 import type { CompletionSuggestion, Root, Seed, Utterance } from '../types';
 
-/** A finalized phrase from Speech (or a confirmed Leaves sentence). */
+/** A finalized phrase from Speech. */
 export interface FinalSegment {
   speaker: string;
   text: string;

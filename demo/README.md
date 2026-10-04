@@ -1,55 +1,32 @@
 # ADP demonstration — five minutes
 
-Use a fictional payroll-onboarding client. Enter Alex in the transcript panel's
-Your name field; that one name labels both microphone and Leaves contributions.
-This branch includes main's accounts dashboard/backend and online capture.
-Leaves context is still scoped to the selected meeting.
-
-## 0:00–3:00 — core flow
+Real run: `VITE_USE_MOCKS=false`, `func start` with Speech, OpenAI, Cosmos and the Slack token
+configured, and demo data loaded with `python3 scripts/seed_demo_data.py` (Contoso, Fabrikam,
+Northwind). Use desktop Chrome or Edge, with the Meet call in another tab of the same window.
 
 | Time | Action and explanation |
 | --- | --- |
-| 0:00–0:25 | Open /?accounts and show the client's timeline/grove. State whether the data is sample or real. Choose Start a meeting: the route carries the account ID into both transcript and Leaves extraction. Mock account and meeting stores remain separate, so demonstrate cross-view persistence with the real backend only. |
-| 0:25–1:00 | Enter Your name. In desktop Chrome/Edge, choose Share meeting tab and enable tab audio for the Zoom/Meet/Teams tab. Say “I'll send the payroll integration checklist by October 5.” Stop sharing to flush extraction. If services are unavailable, announce BACKUP A and use Play fixture transcript. |
-| 1:00–1:20 | Inspect the saved commitment, owner, deadline and source timestamp in the forest. Refresh Leaves suggestions: they use persisted recent meeting context. Label fixture suggestions as fixtures. |
-| 1:20–1:50 | Pick suggested words and type/spell Quetzal-X9. Build “I will review Quetzal-X9.” Explain that arbitrary spelling and direct preview editing are always available. |
-| 1:50–2:15 | Confirm, then edit to “I will review Quetzal-X9 with Sam.” Show that Speak is disabled because editing revokes confirmation. |
-| 2:15–2:45 | Confirm again and explicitly activate Speak using a click or Enter/Space. Let Azure Speech finish, then show the saved Leaves contribution/seed. Capture should be stopped to avoid recapturing synthesized audio. |
-| 2:45–3:00 | Explain that playback initiation records the contribution; save/extraction retries retain its identity and never repeat audio. |
+| 0:00–0:30 | **Hook.** "A rep joins a renewal call. What did we promise this client?" Open Client accounts → Contoso: timeline of emails, chat, document and meetings; seeds as a grove. |
+| 0:30–1:30 | **Ingest.** Add to grove → Contoso → paste an email → Add to grove: seeds appear with quotes. Post a message in #contoso, then Connect and sync: Slack becomes seeds. "Slack is live; Gmail and Teams use the same pipeline." |
+| 1:30–3:00 | **Live call.** From Contoso, Start a meeting → enter Your name → Share meeting tab (tab audio on). Speak: commitments appear with owners and dates; rename Guest-1 to the other person. Saying "Contoso" shows the client context card. Say "the payroll integration checklist is done" → Mark as done? → Yes → the seed blooms on Contoso's page. |
+| 3:00–4:00 | **Ask mid-call.** Hold to ask by voice (or type): "What did Contoso say about payroll integration?" → cited answer; chips open the source. Your question is not added to the transcript. Optionally ask "What are the open commitments for Fabrikam?" (overdue item called out). |
+| 4:00–4:30 | **Next action.** Add to grove → Draft follow-up for the account → an editable email built from real seeds. Nothing is sent automatically. |
+| 4:30–5:00 | **Close.** Azure architecture: Browser → Azure Functions → Azure AI Speech, Azure OpenAI (gpt-5-mini), Cosmos DB, plus Slack. Roadmap: more connectors, vector search, completions from email/Slack. |
 
-## 3:00–5:00 — value and architecture
-
-| Time | Content |
-| --- | --- |
-| 3:00–3:35 | Show client account → meeting/text sources → shared extraction and Cosmos → source-backed seeds and account timeline. Clearly distinguish integrated account/backend/capture work from pending ingestion connections. |
-| 3:35–4:10 | If the team's Slack integration has landed and passed preflight, demonstrate it. Otherwise use a labeled planned-flow diagram; do not present fixture data as live Slack. |
-| 4:10–4:40 | Explain the ADP value: follow-through on client onboarding/payroll commitments, with owners, deadlines and evidence. Leaves lets a participant compose their own contribution without being limited to suggestions. |
-| 4:40–5:00 | Close with remaining integration: ingestion, audio routing into the call, live service validation and user testing. |
-
-Whiteboard OCR and hand/head tracking are dropped.
+Mute: Zoom/Meet/Teams' mute does not reach Grovekeeper; use Mute my mic in the transcript panel.
 
 ## Preflight
 
-1. Run python -m pytest api/tests, npm test, npm run typecheck and npm run build.
-2. Use VITE_USE_MOCKS=false and server-side Speech/OpenAI/Cosmos settings for the
-   real run. Verify suggestion, confirmation, playback, save, extraction and reload.
-3. Verify Chrome/Edge tab-audio sharing, the microphone and output device. Browser
-   Speech plays locally; verify separately how the online call hears that output.
-4. Resolve pending saves before changing Your name or reloading.
-5. Prepare account-linked demo data through the shared backend. Verify each
-   claimed ingestion/Slack connection rather than assuming it is available.
-6. Rehearse twice with a timer. Optionally record a successful real-service run
-   labeled with its date/branch. No recording is bundled.
+1. Run `python -m pytest api/tests`, `npm test`, `npm run typecheck` and `npm run build`.
+2. Restart `func start` after any settings change; confirm `GET /api/health`.
+3. Check the three demo questions with Ask the Grove before going live.
+4. Sync each Slack channel once in advance so the live sync shows only the new message.
+5. Rehearse twice with a timer.
 
-## Backup material — announce every switch
+## Backup — announce every switch
 
-- BACKUP A — mock core: fixture transcript, suggestions and deterministic mock
-  extraction. Show spelling, editing and confirmation gating. Mock Speech rejects;
-  do not claim audio played or a spoken contribution was saved. State resets on reload.
-- BACKUP B — prerecorded real-service run: operator-provided recording of a
-  successful rehearsal, explicitly labeled prerecorded. Not included in this repo.
-- BACKUP C — tests: confirmation/playback, persisted-utterance retry, shared-name/
-  clock integration and backend tests. Azure calls and Cosmos are faked; passing
-  tests do not prove cloud access.
+- **A — prerecorded run:** a recording of a successful real rehearsal, labeled as prerecorded.
+- **B — mock mode:** `VITE_USE_MOCKS=true` uses fixtures and deterministic, clearly labeled
+  non-AI extraction and answers; Speech is unavailable. Never present it as live AI.
 
-See services.md, integration.md and validation.md for setup and handoff.
+See [ask-assistant.md](ask-assistant.md) for the Ask the Grove and live-assistant details.

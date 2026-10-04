@@ -107,18 +107,14 @@ def test_invalid_json_is_a_contract_error(handlers):
     assert response.status_code == 400
 
 
-def test_speech_missing_configuration_and_preview_only_composition(handlers, monkeypatch):
+def test_speech_missing_configuration_is_503(handlers, monkeypatch):
     monkeypatch.delenv("AZURE_SPEECH_KEY", raising=False)
     assert handlers["speech_token"](request()).status_code == 503
-    response = handlers["compose"](request({"meetingId": "a", "picked": ["hello"]}))
-    assert response.status_code == 200
-    assert payload(response) == {"sentence": "hello"}
-    assert store.list_utterances("a") == []
 
 
 def test_all_contract_routes_are_registered():
     routes = {function.get_trigger().get_dict_repr()["route"] for function in FUNCTIONS}
     assert routes == {"health", "ask", "speech-token", "utterances", "extract", "seeds", "seeds/{id}",
                       "meetings/{meetingId}/grove", "meetings/{meetingId}/utterances", "accounts", "accounts/{id}/timeline",
-                      "whiteboard", "leaves/suggest", "leaves/compose",
+                      "whiteboard",
                       "ingest", "slack/sync", "accounts/{id}/followup"}

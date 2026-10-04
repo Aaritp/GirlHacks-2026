@@ -129,10 +129,6 @@ export interface ExtractRequest { meetingId: string; utterances: Utterance[]; ac
 export interface UtteranceList { utterances: Utterance[] }
 export interface WhiteboardRequest { meetingId: string; imageBase64: string }
 export interface WhiteboardResult { text: string; seeds: Seed[] }
-export interface SuggestRequest { meetingId: string; recentText: string }
-export interface Suggestions { words: string[]; phrases: string[] }
-export interface ComposeRequest { meetingId: string; picked: string[] }
-export interface ComposeResult { sentence: string }
 /** IDs and source provenance are immutable; meetingId travels in the PATCH query. */
 export type SeedPatch = Partial<Pick<Seed,
   'text' | 'owner' | 'deadline' | 'kind' | 'status' | 'health' | 'lastActivity' | 'size' | 'completedBy'

@@ -1,6 +1,6 @@
 import type {
-  AskRequest, AskResponse, ComposeRequest, ComposeResult, ExtractRequest, ExtractResult, Grove, Seed, SeedPatch,
-  SpeechToken, SuggestRequest, Suggestions, Utterance, UtteranceList, WhiteboardRequest, WhiteboardResult,
+  AskRequest, AskResponse, ExtractRequest, ExtractResult, Grove, Seed, SeedPatch,
+  SpeechToken, Utterance, UtteranceList, WhiteboardRequest, WhiteboardResult,
 } from '../types';
 
 export interface GroveApi {
@@ -16,8 +16,6 @@ export interface GroveApi {
   /** Ask the Grove: a cited answer from stored seeds, sources and transcripts. */
   ask(request: AskRequest): Promise<AskResponse>;
   readWhiteboard(request: WhiteboardRequest): Promise<WhiteboardResult>;
-  suggest(request: SuggestRequest): Promise<Suggestions>;
-  compose(request: ComposeRequest): Promise<ComposeResult>;
 }
 
 export class ApiError extends Error {

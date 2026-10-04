@@ -44,11 +44,8 @@ describe('mock API', () => {
     await expect(api.extract({ ...request, meetingId: 'wrong-meeting' })).rejects.toMatchObject({ status: 400 });
   });
 
-  it('returns composed text only and does not pretend to provide Speech or OCR', async () => {
+  it('does not pretend to provide Speech or OCR', async () => {
     const api = createMockApi();
-    expect(await api.compose({ meetingId: DEMO_MEETING_ID, picked: ['a', 'custom', 'word'] }))
-      .toEqual({ sentence: 'a custom word' });
-    await expect(api.compose({ meetingId: DEMO_MEETING_ID, picked: [] })).rejects.toMatchObject({ status: 400 });
     await expect(api.getSpeechToken()).rejects.toMatchObject({ status: 501 });
     await expect(api.readWhiteboard({ meetingId: DEMO_MEETING_ID, imageBase64: 'test' }))
       .rejects.toMatchObject({ status: 501 });
