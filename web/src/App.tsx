@@ -14,11 +14,10 @@ import { createMockIngestApi } from './ingest/mocks';
 const groveApi = usingMocks ? createMockApi(createForestDemo()) : api;
 const ingestApi = usingMocks ? createMockIngestApi(groveApi) : createIngestApi(import.meta.env.VITE_API_BASE_URL || '/api');
 
-function MeetingGrove() {
-  const parameters = new URLSearchParams(window.location.search);
+function MeetingGrove({ meetingId: initialMeetingId, accountId }: { meetingId: string; accountId: string | null }) {
   const [accountGrove, setAccountGrove] = useState<{ id: string; title: string } | null>(null);
   const [view, setView] = useState<'forest' | 'ingest'>('forest');
-  const meetingId = accountGrove?.id ?? (parameters.get('meetingId') || DEMO_MEETING_ID);
+  const meetingId = accountGrove?.id ?? initialMeetingId;
   const title = accountGrove?.title ?? (meetingId === DEMO_MEETING_ID ? demoSource.title : `Meeting ${meetingId}`);
   const [revision, setRevision] = useState(0);
   const reloadGrove = useCallback(() => setRevision((value) => value + 1), []);
@@ -33,7 +32,10 @@ function MeetingGrove() {
         setAccountGrove({ id, title: accountTitle }); reloadGrove(); setView('forest');
       }} /> : <ForestWorkspace api={groveApi} meetingId={meetingId} meetingTitle={title} demo={usingMocks} refreshSignal={revision}>
         {accountGrove ? <button type="button" onClick={() => setAccountGrove(null)}>Return to meeting</button>
-          : <TranscriptPanel api={groveApi} meetingId={meetingId} onSeedsExtracted={reloadGrove} />}
+          : <>
+            {accountId && <p><a href={`?account=${encodeURIComponent(accountId)}`}>Back to this meeting's client account</a></p>}
+            <TranscriptPanel api={groveApi} meetingId={meetingId} accountId={accountId} onSeedsExtracted={reloadGrove} />
+          </>}
       </ForestWorkspace>}
     </>
   );
@@ -41,6 +43,8 @@ function MeetingGrove() {
 
 export function App() {
   const parameters = new URLSearchParams(window.location.search);
+  // `?accounts` lists client accounts and `?account=ID` opens one; anything else is a meeting grove.
+  // `?meetingId=ID&accountId=ID` links that meeting's seeds to the account when they are extracted.
   if (parameters.has('accounts') || parameters.has('account')) return <AccountsApp api={accountsApi} demo={usingMocks} />;
-  return <MeetingGrove />;
+  return <MeetingGrove meetingId={parameters.get('meetingId') || DEMO_MEETING_ID} accountId={parameters.get('accountId') || null} />;
 }
