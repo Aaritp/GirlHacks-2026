@@ -6,14 +6,14 @@ colors:
   metal-deep: "#10271f"
   metal-reflection: "#6b877a"
   citron: "#d5e999"
-  page: "#e9dfcb"
-  paper-raised: "#f3ebdb"
-  paper-sunk: "#ddd1b8"
-  rule: "#b3a585"
-  rule-soft: "#d2c5a8"
+  page: "#d9cbae"
+  paper-raised: "#e6dac0"
+  paper-sunk: "#cabb9b"
+  rule: "#9f9070"
+  rule-soft: "#bfb08c"
   ink: "#203a30"
-  muted: "#4d5c50"
-  line: "#d2c5a8"
+  muted: "#445246"
+  line: "#bfb08c"
   planted: "#719b45"
   growing: "#4a8058"
   blossom: "#d79cdd"
@@ -115,7 +115,7 @@ four plant states. Text labels repeat the meaning of every color.
 
 ### Neutral
 
-The page is a warm, mid-light beige paper (`page`). Fields and raised surfaces use a
+The page is a warm mid beige paper (`page`). Fields and raised surfaces use a
 lighter paper, wells and hover states a slightly darker one, and hairlines a warm rule.
 There is no white surface. Ink and secondary text stay green and are dark enough to read
 on the paper (at least 4.5:1). `web/src/theme.css` holds these tokens and re-grounds every
@@ -213,10 +213,11 @@ relationship labels. Botanical layers crossfade over 480ms; plant lift and scale
 save. Reduced-motion preferences remove animations, transitions, and smooth scrolling;
 status text remains available.
 
-Where the browser supports scroll-driven animation and the visitor has not asked for
-reduced motion, content settles in as it scrolls into view: plants grow up from the
-ground, list and timeline rows slide in along the reading line, panels lift and sharpen,
-and section rules draw from the left. Everything is fully visible without it.
+Unless the visitor has asked for reduced motion, content plays a short entrance the first
+time it comes into view (`web/src/reveal.ts`): plants grow up from the ground, list and
+timeline rows slide in along the reading line, panels lift and sharpen, and section rules
+draw from the left. Items arriving together follow one another by 70ms. Without the
+script everything is simply visible.
 
 Desktop arrangement supports pointer drag and Alt + arrow keys. Drag follows the
 pointer without easing. Positions are stored locally per meeting, independently of
